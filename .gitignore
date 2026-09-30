@@ -141,3 +141,19 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local virtual environment
+.venv/
+
+# ACAM Assistant secrets (session signing key, account password hashes)
+.secret_key
+users.json
+
+# Docker secrets for local compose
+secrets/
+
+# Coverage artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

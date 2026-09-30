@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>{{ current_user.display_name }}</h1>
+    <p class="muted"><span class="mono">{{ current_user.username }}</span>{% if current_user.is_admin %} · <span class="badge status-included">administrator</span>{% endif %}
+      · {{ projects }} project{{ '' if projects == 1 else 's' }} · member since {{ current_user.created_at|when }}</p>
+  </div>
+  <div class="head-actions"><a class="btn" href="{{ url_for('index') }}">My projects</a></div>
+</section>
+
+<div class="grid-2">
+  <section>
+    {% if users is not none %}
+    <div class="card">
+      <h2>Users</h2>
+      <p class="muted small">Every user has an isolated workspace. Administrators can create accounts but cannot open other users' projects from the web interface.</p>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Created</th></tr></thead>
+        <tbody>
+        {% for u in users %}
+          <tr><td class="mono">{{ u.username }}</td><td>{{ u.display_name }}</td>
+            <td>{{ 'administrator' if u.is_admin else 'researcher' }}</td><td>{{ u.created_at|when }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <form class="card form" method="post" action="{{ url_for('admin_create_user') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Create user</h2>
+      <label>Username <input name="username" autocomplete="off" autocapitalize="none" required pattern="[a-z0-9][a-z0-9_\-]{2,31}"></label>
+      <label>Display name <input name="display_name"></label>
+      <label>Initial password <span class="hint">at least 8 characters; ask them to change it</span>
+        <input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label class="inline"><input type="checkbox" name="is_admin" value="1"> Administrator</label>
+      <button class="btn btn-primary" type="submit">Create user</button>
+    </form>
+    {% else %}
+    <div class="card">
+      <h2>Your workspace</h2>
+      <p class="muted">Your projects, sources and analyses are stored in your own workspace and are not visible to other users.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside>
+    <form class="card form" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Change password</h2>
+      <label>Current password <input name="current" type="password" autocomplete="current-password" required></label>
+      <label>New password <input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label>Confirm new password <input name="confirm" type="password" autocomplete="new-password" minlength="8" required></label>
+      <button class="btn" type="submit">Change password</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

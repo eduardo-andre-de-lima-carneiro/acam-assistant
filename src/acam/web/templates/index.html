@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% block title %}My projects{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>My projects</h1>
+    <p class="muted">Your private workspace, {{ current_user.display_name }}. Each literature review is an independent project with its own sources, catalog and artifacts — no other user can see them.</p>
+  </div>
+</section>
+
+<div class="grid-2">
+  <section>
+    {% if projects %}
+    <ul class="project-list">
+      {% for p in projects %}
+      <li>
+        <a class="card card-link" href="{{ url_for('project_view', pid=p.id) }}">
+          <h2>{{ p.info.title }}</h2>
+          {% if p.info.description %}<p class="muted">{{ p.info.description }}</p>{% endif %}
+          {% for q in p.info.research_questions[:2] %}<p class="rq">{{ q }}</p>{% endfor %}
+          <div class="card-foot">
+            <strong>{{ p.count }}</strong> source{{ '' if p.count == 1 else 's' }}
+            {% for st, n in p.statuses.items() %}{{ status_badge(st) }}<span class="count">{{ n }}</span>{% endfor %}
+          </div>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="card empty">
+      <h2>No projects yet</h2>
+      <p class="muted">Create your first literature review project to start importing sources.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside>
+    <form class="card form" method="post" action="{{ url_for('create_project') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>New project</h2>
+      <label>Title <input name="title" required placeholder="AI in Software Engineering"></label>
+      <label>Identifier <span class="hint">optional — derived from the title</span>
+        <input name="id" pattern="[a-z0-9][a-z0-9_-]*" placeholder="ai-se"></label>
+      <label>Description <textarea name="description" rows="2"></textarea></label>
+      <label>Research questions <span class="hint">one per line</span>
+        <textarea name="questions" rows="3" placeholder="How is AI applied to code review?"></textarea></label>
+      <button class="btn btn-primary" type="submit">Create project</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

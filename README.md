@@ -1,10 +1,12 @@
-# Academic Literature Review Assistant
+# ACAM Assistant
+
+**ACAM** stands for **Academic Management**. ACAM Assistant helps researchers manage their academic work, starting with literature reviews.
 
 > A structured research assistant for organizing, cataloging, analyzing, and synthesizing academic literature while reducing the manual effort involved in systematic literature reviews.
 
 ## Overview
 
-The **Academic Literature Review Assistant** is a research-oriented project designed to reduce the time and cognitive effort required to perform literature reviews and related academic research activities.
+**ACAM Assistant** (Academic Management Assistant) is a research-oriented project designed to reduce the time and cognitive effort required to perform literature reviews and related academic research activities.
 
 Literature reviews are often labor-intensive because researchers must manually:
 
@@ -110,6 +112,7 @@ Individual Analysis  Cross-source Analysis
               │
               ▼
       Academic Artifacts
+````
 
 The **Markdown document is the canonical analytical representation** of the original source.
 
@@ -171,7 +174,7 @@ TXT ──────┤
           │
           ▼
        Analysis
-````
+```
 
 This design provides a standardized representation for downstream processing.
 
@@ -893,16 +896,18 @@ A modular architecture is recommended.
 # Repository Structure
 
 ```text
-academic-literature-review/
+acam-assistant/
 │
 ├── README.md
 │
-├── docs/
-│   ├── architecture.md
-│   ├── data-model.md
-│   ├── workflow.md
-│   ├── research-methodology.md
-│   └── decisions/
+├── docs/                      (implemented — see docs/README.md)
+│   ├── design/                overview, data-model, processing-pipeline, user-experience
+│   ├── architecture/          overview + decisions/ (ADRs)
+│   ├── technology/            stack
+│   ├── security/              security
+│   ├── deployment/            local, container, server, configuration
+│   ├── integration/           claude-api, cli-reference, http-interface, data-exchange, extending
+│   └── planning/              mvp-plan
 │
 ├── projects/
 │   └── <project-id>/
@@ -1459,43 +1464,43 @@ Store JSON
 
 ## Phase 1 — Foundation
 
-- [ ] Define project structure
-- [ ] Define JSON schemas
-- [ ] Implement project creation
-- [ ] Implement source registration
-- [ ] Implement document storage
+- [x] Define project structure
+- [x] Define JSON schemas
+- [x] Implement project creation
+- [x] Implement source registration
+- [x] Implement document storage
 
 ## Phase 2 — Conversion
 
-- [ ] PDF → Markdown
-- [ ] DOCX → Markdown
-- [ ] TXT → Markdown
-- [ ] HTML → Markdown
-- [ ] Add conversion validation
+- [x] PDF → Markdown
+- [x] DOCX → Markdown
+- [x] TXT → Markdown
+- [x] HTML → Markdown
+- [x] Add conversion validation
 
 ## Phase 3 — Metadata
 
-- [ ] Extract title
-- [ ] Extract authors
-- [ ] Extract publication date
-- [ ] Extract abstract
-- [ ] Extract keywords
-- [ ] Extract DOI
-- [ ] Generate bibliographic references
+- [x] Extract title
+- [x] Extract authors
+- [x] Extract publication date
+- [x] Extract abstract
+- [x] Extract keywords
+- [x] Extract DOI
+- [x] Generate bibliographic references
 
 ## Phase 4 — Analysis
 
-- [ ] Source summarization
-- [ ] Research objective extraction
-- [ ] Methodology extraction
-- [ ] Findings extraction
-- [ ] Limitations extraction
-- [ ] Research gap identification
-- [ ] Structured analysis JSON
+- [x] Source summarization
+- [x] Research objective extraction
+- [x] Methodology extraction
+- [x] Findings extraction
+- [x] Limitations extraction
+- [x] Research gap identification
+- [x] Structured analysis JSON
 
 ## Phase 5 — Research Synthesis
 
-- [ ] Literature matrix
+- [x] Literature matrix
 - [ ] Cross-source comparison
 - [ ] Theme identification
 - [ ] Methodology comparison
@@ -1509,15 +1514,15 @@ Store JSON
 - [ ] Theoretical framework template
 - [ ] Methodology template
 - [ ] Academic summary template
-- [ ] Reference generation
+- [x] Reference generation
 
 ## Phase 7 — Advanced Research Features
 
 - [ ] Semantic search
 - [ ] Citation graph
 - [ ] Knowledge graph
-- [ ] Duplicate detection
-- [ ] Evidence traceability
+- [x] Duplicate detection (exact file hash only)
+- [x] Evidence traceability (section + page + quote per claim)
 - [ ] PRISMA workflow support
 
 ---
@@ -1692,6 +1697,180 @@ Critical interpretation, methodological judgment, and scientific reasoning shoul
 
 ---
 
+# Getting Started (MVP)
+
+The MVP is a Python tool, `acam`, with a local web interface and a command line. It implements the
+[Initial MVP Scope](#initial-mvp-scope) pipeline:
+
+```text
+Import → Convert → Validate Markdown → Extract Metadata → Analyze + Summarize → Store JSON
+```
+
+and generates the first artifacts from the catalog: literature matrix (Markdown/CSV),
+ABNT reference list, per-source analysis reports and a full JSON export.
+
+The implementation plan, scope decisions and known limitations are in
+[docs/planning/mvp-plan.md](docs/planning/mvp-plan.md).
+
+## Documentation
+
+Full technical documentation is in [`docs/`](docs/README.md):
+
+| Topic | Documents |
+| ----- | --------- |
+| Design | [overview & principles](docs/design/overview.md), [data model](docs/design/data-model.md), [processing pipeline](docs/design/processing-pipeline.md), [user experience](docs/design/user-experience.md) |
+| Architecture | [overview](docs/architecture/overview.md), [decision records](docs/architecture/decisions/README.md) |
+| Technology | [stack, dev setup & testing](docs/technology/stack.md) |
+| Security | [threat model, controls & known gaps](docs/security/security.md) |
+| Deployment | [local](docs/deployment/local.md), [container](docs/deployment/container.md), [server](docs/deployment/server.md), [configuration](docs/deployment/configuration.md) |
+| Integration | [Claude API](docs/integration/claude-api.md), [CLI](docs/integration/cli-reference.md), [HTTP](docs/integration/http-interface.md), [data exchange](docs/integration/data-exchange.md), [extending](docs/integration/extending.md) |
+
+## Install
+
+Requires Python 3.10+.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+## Analysis engines
+
+| Engine      | When used                                              | What it does |
+| ----------- | ------------------------------------------------------ | ------------ |
+| `llm`       | Default when `ANTHROPIC_API_KEY` is set                | Claude (`claude-opus-5-5`) reads the canonical Markdown and fills the analysis schema with structured outputs; every claim carries section/page/quote evidence. |
+| `heuristic` | Default without credentials, or `--engine heuristic`   | Offline, rule-based, extractive. Selects verbatim sentences by section and cue phrases. Lower recall; useful for trying the tool and for tests. |
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...     # optional; enables the llm engine
+export ACAM_MODEL=claude-opus-5-5       # optional model override
+```
+
+## Run in a container
+
+```bash
+cp .env.example .env              # optional: ANTHROPIC_API_KEY, first admin, HTTPS domain
+docker compose up -d --build      # http://127.0.0.1:8000
+docker compose --profile tls up -d --build   # public server with automatic HTTPS (Caddy)
+```
+
+Compose runs two services on one data volume. The web interface uses several
+gunicorn processes, and a separate **worker** runs analyses from a durable queue
+(`docker compose up -d --scale worker=N` for more). Both run as non-root with a
+read-only root filesystem, and both have health checks.
+Details: [docs/deployment/container.md](docs/deployment/container.md).
+
+## Web interface
+
+```bash
+acam web                 # then open http://127.0.0.1:8000
+```
+
+The first visit asks you to create the **administrator** account.
+
+### Users and projects
+
+- **Multi-user:** every user logs in and works in a **private workspace**. Other users can't see or open their projects, even with a direct URL.
+- **Multiple projects:** each user can keep any number of projects in their space, and the same project id can exist in different users' spaces.
+- **Accounts:** administrators create accounts on the **Account** page. Pass `--allow-signup` to let people register themselves. Every user can change their own password.
+- **Deleting a project:** open the project, expand "Delete project", and type the project id to confirm.
+
+On disk:
+
+```text
+projects/                  # data root ($ACAM_HOME or --workspace)
+├── users.json             # accounts (password hashes only, mode 600)
+├── .secret_key            # session signing key (mode 600)
+└── users/
+    ├── eduardo/           # one private workspace per user
+    │   ├── ai-se/
+    │   └── llm-edu/
+    └── maria/
+        └── ai-se/         # same project id, different user: fully independent
+```
+
+### What you can do in it
+
+- **Projects:** create a project; edit its research questions, objectives, scope and inclusion/exclusion criteria.
+- **Import:** drag and drop PDF, DOCX, TXT, Markdown and HTML files, with an optional source type, tags, and "analyze after import".
+- **Sources table:** filter by text, status and tag, then analyze selected sources in bulk. Analysis runs in the background and the page refreshes when it finishes.
+- **Source page:** the author's abstract and the generated summary side by side. Metadata shows a provenance badge per field (extracted with a confidence score, confirmed, or entered by the researcher), with Confirm, Save and Confirm all. The page also has the analysis with section/page/quote evidence, review status, tags, notes, conversion checks, event history, the canonical Markdown and the original file.
+- **Artifacts:** the literature matrix and the ABNT reference list as web pages, and downloads of `.md`, `.csv` and `catalog.json`.
+
+Security: passwords are hashed with scrypt. Sessions use HttpOnly, SameSite=Lax cookies, and every form carries a CSRF token. Project ids and usernames are validated, so a path can't reach another user's folder. By default the server listens on `127.0.0.1` only.
+
+Options: `--port`, `--host`, `--allow-signup`, `--secure-cookies` (use this behind HTTPS), and the global `--workspace`.
+
+If you expose the server beyond your own machine, put it behind a real WSGI server (for example `gunicorn "acam.web:create_app()"`) and an HTTPS reverse proxy. Flask's built-in server is only meant for local use. Everyone shares the server's `ANTHROPIC_API_KEY`.
+
+## Command line
+
+Account management and per-user scoping:
+
+```bash
+acam user add maria --name "Maria"           # prompts for a password (--admin for administrators)
+acam user list
+acam user passwd maria
+acam user remove maria [--delete-data]
+acam user adopt eduardo                      # move projects created before accounts existed
+acam --user maria projects                   # every command can target a user's workspace
+acam --user maria import ai-se paper.pdf
+```
+
+Without `--user`, commands work directly in the data root, as in single-user mode:
+
+```bash
+# 1. Create a research project (stored under ./projects, or $ACAM_HOME)
+acam init "AI in Software Engineering" --id ai-se \
+  -q "How is AI applied to code review?" --include "peer-reviewed" --exclude "non-English"
+
+# 2. Import sources: PDF, DOCX, TXT, Markdown and HTML
+acam import ai-se examples/sample-article.md paper.pdf thesis.docx --tag llm
+
+# 3. Analyze (auto engine; add --engine heuristic to force offline mode)
+acam analyze ai-se
+
+# 4. Review what was extracted
+acam list ai-se
+acam show ai-se source-001                 # human-readable report
+acam show ai-se source-001 --json          # raw catalog record + analysis
+
+# 5. Researcher-in-the-loop validation
+acam confirm ai-se source-001 title authors doi              # extracted value is correct
+acam set ai-se source-001 publisher "Springer"               # enter/correct a value
+acam set ai-se source-001 authors "Souza, Maria; Miller, John"
+acam set ai-se source-001 type journal_article
+acam status ai-se source-001 validated --note "checked against the PDF"
+acam note ai-se source-001 "Key paper for RQ1"
+
+# 6. Generate academic artifacts (written to projects/ai-se/artifacts/)
+acam matrix ai-se                 # literature-matrix.md   (--csv for a spreadsheet)
+acam references ai-se             # references.md          (ABNT, alphabetical)
+acam report ai-se                 # <source-id>-analysis.md per source
+acam export ai-se                 # catalog.json
+```
+
+`acam formats` lists supported formats, source types, statuses and metadata fields.
+
+## Run the tests
+
+```bash
+pytest
+```
+
+Every run measures coverage and fails below 85% (`python tools/check_coverage.py`
+also holds each file to 85%). The suite covers conversion of every format, validation, metadata extraction,
+reference formatting against the README examples, both analysis engines (the
+Claude call is exercised with a fake client, so no API key is needed), the
+researcher validation workflow, JSON-schema conformance, the CLI end to end and
+every web route (upload, background analysis, edits, artifact downloads, CSRF), and
+multi-tenancy: login, sign-up rules, admin rights, isolation between users (including
+direct-URL access and identical project ids), path-traversal attempts, multiple
+projects and deletion, and the `user` CLI.
+
+---
+
 # License
 
 MIT License.
@@ -1700,7 +1879,9 @@ MIT License.
 
 # Project Status
 
-**Status:** Initial design / specification
+**Name:** ACAM Assistant (ACAM = Academic Management); package and command `acam`
+
+**Status:** MVP implemented (see [Getting Started](#getting-started-mvp) and [docs/](docs/README.md))
 
 **Version:** 0.1.0
 
@@ -1716,6 +1897,12 @@ MIT License.
 
 # Next Step
 
+> **Done in 0.1.0.** The technical design below exists: JSON schemas in [`schemas/`](schemas),
+> the pipeline and extraction rules in [docs/design](docs/design/processing-pipeline.md),
+> the prompt in [docs/integration/claude-api.md](docs/integration/claude-api.md), and the
+> architecture in [docs/architecture](docs/architecture/overview.md). The list is kept
+> for reference. Upcoming work is in [docs/planning/mvp-plan.md](docs/planning/mvp-plan.md#6-next-iterations-from-the-readme-roadmap).
+
 The next implementation step should be to transform this specification into a formal technical design containing:
 
 1. `project.schema.json`
@@ -1730,8 +1917,6 @@ The next implementation step should be to transform this specification into a fo
 10. Initial MVP architecture
 
 These specifications should be defined **before implementing the AI analysis layer**, so that the system's data model and provenance requirements remain independent from any particular AI model.
-
-````
 
 ### Recommended architectural decision
 
@@ -1751,6 +1936,6 @@ Structured Research Data
       │ machine-readable
       ▼
 Academic Artifacts
-````
+```
 
 This is important because it prevents a common problem in AI-assisted research systems: the model's interpretation gradually becoming the "source of truth." The **original document remains authoritative**, Markdown becomes the canonical processing layer, and JSON stores **extracted/derived information with provenance and validation status**.

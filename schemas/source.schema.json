@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source.schema.json",
+  "title": "Catalog record for one academic source (one entry of sources.json)",
+  "type": "object",
+  "$defs": {
+    "field": {
+      "type": "object",
+      "description": "Provenance-wrapped value: extracted/generated values stay unvalidated until the researcher confirms them.",
+      "properties": {
+        "value": {},
+        "source": {
+          "enum": [
+            "extracted",
+            "generated",
+            "researcher",
+            "unknown"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "validated": {
+          "type": "boolean"
+        },
+        "extractor": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "source",
+        "confidence",
+        "validated"
+      ]
+    }
+  },
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^source-\\d{3,}$"
+    },
+    "type": {
+      "enum": [
+        "book",
+        "book_chapter",
+        "journal_article",
+        "conference_paper",
+        "thesis",
+        "dissertation",
+        "technical_report",
+        "website",
+        "online_article",
+        "preprint",
+        "other"
+      ]
+    },
+    "type_provenance": {
+      "type": "object"
+    },
+    "status": {
+      "enum": [
+        "imported",
+        "converted",
+        "extracted",
+        "analyzed",
+        "under_review",
+        "rejected",
+        "validated",
+        "included"
+      ]
+    },
+    "original_file": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "stored_as": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "name",
+        "format",
+        "stored_as",
+        "sha256"
+      ]
+    },
+    "imported_at": {
+      "type": "string"
+    },
+    "markdown_file": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "analysis_file": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "conversion": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/field"
+        },
+        "authors": {
+          "$ref": "#/$defs/field"
+        },
+        "publication_year": {
+          "$ref": "#/$defs/field"
+        },
+        "publisher": {
+          "$ref": "#/$defs/field"
+        },
+        "journal": {
+          "$ref": "#/$defs/field"
+        },
+        "volume": {
+          "$ref": "#/$defs/field"
+        },
+        "issue": {
+          "$ref": "#/$defs/field"
+        },
+        "pages": {
+          "$ref": "#/$defs/field"
+        },
+        "doi": {
+          "$ref": "#/$defs/field"
+        },
+        "url": {
+          "$ref": "#/$defs/field"
+        },
+        "edition": {
+          "$ref": "#/$defs/field"
+        },
+        "publication_place": {
+          "$ref": "#/$defs/field"
+        },
+        "access_date": {
+          "$ref": "#/$defs/field"
+        },
+        "keywords": {
+          "$ref": "#/$defs/field"
+        }
+      },
+      "required": [
+        "title",
+        "authors",
+        "publication_year",
+        "publisher",
+        "journal",
+        "volume",
+        "issue",
+        "pages",
+        "doi",
+        "url",
+        "edition",
+        "publication_place",
+        "access_date",
+        "keywords"
+      ]
+    },
+    "abstract": {
+      "type": "object",
+      "properties": {
+        "original_abstract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generated_summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "summary_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generated_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requires_validation": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "original_abstract",
+        "generated_summary",
+        "requires_validation"
+      ]
+    },
+    "bibliographic_reference": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "style": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "missing_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requires_validation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "analysis": {
+      "type": "object"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "researcher_notes": {
+      "type": "string"
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "at",
+          "event"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "status",
+    "original_file",
+    "imported_at",
+    "metadata",
+    "abstract",
+    "tags",
+    "history"
+  ]
+}

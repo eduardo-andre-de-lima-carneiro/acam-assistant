@@ -1,0 +1,95 @@
+# ACAM Assistant with Docker Compose.
+#
+#   cp .env.example .env            # then edit
+#   docker compose up -d --build    # http://127.0.0.1:8000
+#
+# With automatic HTTPS (Caddy + Let's Encrypt) for a public domain:
+#   set ACAM_DOMAIN and ACAM_SECURE_COOKIES=true in .env, then
+#   docker compose --profile tls up -d --build
+#
+# Services:
+#   acam       web interface (gunicorn, ACAM_WORKERS processes)
+#   worker     background analyses from the job queue (scale with ACAM_WORKER_THREADS
+#              or `docker compose up -d --scale worker=N`)
+#   caddy      optional HTTPS reverse proxy (profile "tls")
+#
+# All services share the data volume; see docs/deployment/container.md.
+
+x-acam: &acam
+  image: acam:${ACAM_IMAGE_TAG:-0.1.0}
+  # Both services use the same locally built image (never pulled from a registry).
+  build:
+    context: .
+    target: runtime
+  pull_policy: build
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  volumes:
+    - acam-data:/data
+  # Hardening: nothing is writable except the data volume and a small tmpfs.
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  acam:
+    <<: *acam
+    environment:
+      ACAM_HOME: /data
+      ACAM_EMBEDDED_WORKER: "false"   # analyses run in the worker service
+    ports:
+      - "127.0.0.1:${ACAM_PORT:-8000}:8000"
+    # Optional: provide the first admin's password as a secret instead of an env var.
+    # 1. echo 'a-strong-password' > secrets/admin_password.txt
+    # 2. uncomment the two `secrets` blocks and set ACAM_ADMIN_USER and
+    #    ACAM_ADMIN_PASSWORD_FILE=/run/secrets/admin_password in .env
+    # secrets:
+    #   - admin_password
+
+  worker:
+    <<: *acam
+    command: ["worker"]
+    environment:
+      ACAM_HOME: /data
+    depends_on:
+      acam:
+        condition: service_healthy   # the web service bootstraps the data root
+    # Let running analyses finish on `docker compose stop` (they are re-queued if killed).
+    stop_grace_period: 3m
+    healthcheck:
+      test: ["CMD", "acam", "worker", "--health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+  caddy:
+    image: caddy:2
+    profiles: [tls]
+    restart: unless-stopped
+    depends_on:
+      acam:
+        condition: service_healthy
+    environment:
+      ACAM_DOMAIN: ${ACAM_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+# secrets:
+#   admin_password:
+#     file: ./secrets/admin_password.txt
+
+volumes:
+  acam-data:
+  caddy-data:
+  caddy-config:

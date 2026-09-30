@@ -1,0 +1,587 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "analysis.schema.json",
+  "title": "Structured analysis of one source (analysis/<source-id>.json)",
+  "type": "object",
+  "properties": {
+    "metadata_candidates": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "Bibliographic data explicitly printed in the document. null when absent.",
+          "properties": {
+            "title": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "publication_year": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "journal": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "publisher": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "volume": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "issue": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "pages": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "doi": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "edition": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "publication_place": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "keywords": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "source_type": {
+              "type": "string",
+              "enum": [
+                "book",
+                "book_chapter",
+                "journal_article",
+                "conference_paper",
+                "thesis",
+                "dissertation",
+                "technical_report",
+                "website",
+                "online_article",
+                "preprint",
+                "other"
+              ]
+            }
+          },
+          "required": [
+            "title",
+            "authors",
+            "publication_year",
+            "journal",
+            "publisher",
+            "volume",
+            "issue",
+            "pages",
+            "doi",
+            "edition",
+            "publication_place",
+            "keywords",
+            "source_type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "description": "Structured summary (150-250 words): problem, objective, method, main findings, conclusion."
+    },
+    "research_problem": {
+      "type": "string"
+    },
+    "research_objective": {
+      "type": "string"
+    },
+    "research_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "theoretical_framework": {
+      "type": "string"
+    },
+    "methodology": {
+      "type": "object",
+      "properties": {
+        "approach": {
+          "type": "string",
+          "enum": [
+            "qualitative",
+            "quantitative",
+            "mixed_methods",
+            "systematic_review",
+            "literature_review",
+            "experimental",
+            "quasi_experimental",
+            "case_study",
+            "survey",
+            "design_science",
+            "theoretical",
+            "other",
+            "unknown"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "population_sample": {
+          "type": "string"
+        },
+        "data_collection": {
+          "type": "string"
+        },
+        "analysis_method": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "approach",
+        "description",
+        "population_sample",
+        "data_collection",
+        "analysis_method"
+      ],
+      "additionalProperties": false
+    },
+    "main_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The claim, in your own concise words."
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Heading of the section the claim comes from."
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page number from the nearest preceding <!-- page: N --> marker."
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Short verbatim excerpt (max ~40 words) supporting the claim."
+          }
+        },
+        "required": [
+          "text",
+          "section",
+          "page",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "conclusions": {
+      "type": "string"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The claim, in your own concise words."
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Heading of the section the claim comes from."
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page number from the nearest preceding <!-- page: N --> marker."
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Short verbatim excerpt (max ~40 words) supporting the claim."
+          }
+        },
+        "required": [
+          "text",
+          "section",
+          "page",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "contributions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The claim, in your own concise words."
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Heading of the section the claim comes from."
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page number from the nearest preceding <!-- page: N --> marker."
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Short verbatim excerpt (max ~40 words) supporting the claim."
+          }
+        },
+        "required": [
+          "text",
+          "section",
+          "page",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "future_research": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "relevant_concepts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "definitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "term",
+          "definition",
+          "page"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "theories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "frequently_cited_authors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "research_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The claim, in your own concise words."
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Heading of the section the claim comes from."
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page number from the nearest preceding <!-- page: N --> marker."
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Short verbatim excerpt (max ~40 words) supporting the claim."
+          }
+        },
+        "required": [
+          "text",
+          "section",
+          "page",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "relevance_to_project": {
+      "type": "string",
+      "description": "How the source relates to the project's research questions. 'unknown' if no project questions are given."
+    },
+    "confidence": {
+      "type": "number",
+      "description": "0-1: how completely the document could be analyzed."
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "engine": {
+      "enum": [
+        "llm",
+        "heuristic"
+      ]
+    },
+    "summary_type": {
+      "type": "string"
+    },
+    "requires_validation": {
+      "const": true
+    },
+    "processing": {
+      "type": "object",
+      "properties": {
+        "processed_at": {
+          "type": "string"
+        },
+        "processor_version": {
+          "type": "string"
+        },
+        "analysis_model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prompt_version": {
+          "type": "string"
+        },
+        "input_tokens": {
+          "type": "integer"
+        },
+        "output_tokens": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "processed_at",
+        "processor_version",
+        "analysis_model",
+        "prompt_version"
+      ]
+    }
+  },
+  "required": [
+    "source_id",
+    "engine",
+    "processing",
+    "requires_validation",
+    "metadata_candidates",
+    "summary",
+    "research_problem",
+    "research_objective",
+    "research_questions",
+    "hypotheses",
+    "theoretical_framework",
+    "methodology",
+    "main_findings",
+    "conclusions",
+    "limitations",
+    "contributions",
+    "future_research",
+    "relevant_concepts",
+    "definitions",
+    "theories",
+    "frequently_cited_authors",
+    "research_gaps",
+    "relevance_to_project",
+    "confidence",
+    "warnings"
+  ],
+  "additionalProperties": false
+}

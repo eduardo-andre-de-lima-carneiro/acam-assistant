@@ -1,0 +1,43 @@
+{% macro status_badge(status) -%}
+<span class="badge status-{{ status }}">{{ status.replace('_', ' ') }}</span>
+{%- endmacro %}
+
+{% macro provenance(entry) -%}
+{% if entry.validated %}
+  <span class="prov prov-validated" title="Validated by the researcher">✓ {{ 'researcher' if entry.source == 'researcher' else 'confirmed' }}</span>
+{% elif entry.value not in (none, '', []) %}
+  <span class="prov prov-candidate" title="Candidate value — not validated">
+    {{ entry.extractor or entry.source }}{% if entry.confidence is not none %} · {{ '%.0f' % (entry.confidence * 100) }}%{% endif %}
+  </span>
+{% else %}
+  <span class="prov prov-missing">missing</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro evidence_list(items, empty='Nothing identified.') -%}
+{% if items %}
+<ul class="evidence">
+  {% for i in items %}
+  <li>
+    {% if i is string %}{{ i }}{% else %}
+      <p>{{ i.text }}</p>
+      {% if i.section or i.page %}
+        <span class="loc">{% if i.section %}§ {{ i.section }}{% endif %}{% if i.section and i.page %} · {% endif %}{% if i.page %}p. {{ i.page }}{% endif %}</span>
+      {% endif %}
+      {% if i.quote and i.quote != i.text %}<blockquote>“{{ i.quote }}”</blockquote>{% endif %}
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">{{ empty }}</p>
+{% endif %}
+{%- endmacro %}
+
+{% macro engine_select(name='engine') -%}
+<select name="{{ name }}" aria-label="Analysis engine">
+  <option value="auto">auto ({{ default_engine }})</option>
+  <option value="llm">llm (Claude)</option>
+  <option value="heuristic">heuristic (offline)</option>
+</select>
+{%- endmacro %}

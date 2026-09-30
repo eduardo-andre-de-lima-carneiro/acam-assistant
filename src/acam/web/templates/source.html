@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, provenance, evidence_list, engine_select with context %}
+{% set title = value_of(s.metadata, 'title', s.original_file.name) %}
+{% block title %}{{ title }}{% endblock %}
+{% block crumbs %}<span aria-hidden="true">/</span><span class="mono">{{ s.id }}</span>{% endblock %}
+{% block content %}
+{% set running = job and job.state in ('queued', 'running') %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow"><span class="mono">{{ s.id }}</span> · {{ s.type.replace('_', ' ') }} · {{ status_badge(s.status) }}
+      {% for t in s.tags %}<span class="tag">{{ t }}</span>{% endfor %}</p>
+    <h1>{{ title }}</h1>
+    {% set ref = s.bibliographic_reference or {} %}
+    {% if ref.text %}
+    <p class="reference">{{ ref.text|mdbold }}</p>
+    {% if ref.missing_fields %}<p class="warn-text small">Reference incomplete — missing: {{ ref.missing_fields|join(', ') }}</p>{% endif %}
+    {% endif %}
+  </div>
+  <div class="head-actions">
+    <a class="btn btn-ghost" href="{{ url_for('markdown_view', pid=project.id, sid=s.id) }}">Markdown</a>
+    <a class="btn btn-ghost" href="{{ url_for('original', pid=project.id, sid=s.id) }}" target="_blank" rel="noopener">Original file</a>
+    <a class="btn btn-ghost" href="{{ url_for('download', pid=project.id, name=s.id ~ '-analysis.md') }}">Report .md</a>
+  </div>
+</section>
+
+{% if running %}
+<div class="banner" data-poll="{{ url_for('jobs_api', pid=project.id) }}" data-active="{{ 1 }}">
+  <span class="spinner" aria-hidden="true"></span> Analysis {{ job.state }} with the {{ job.engine }} engine… this page refreshes when it finishes.
+</div>
+{% elif job and job.state == 'failed' %}
+<div class="flash flash-error">Last analysis failed: {{ job.error }}</div>
+{% endif %}
+
+<div class="grid-main">
+  <section>
+    {% if s.abstract.original_abstract or s.abstract.generated_summary %}
+    <div class="card">
+      <div class="two-col">
+        <div>
+          <h2>Original abstract <span class="label label-evidence">source</span></h2>
+          {% if s.abstract.original_abstract %}<p class="prose">{{ s.abstract.original_abstract }}</p>
+          {% else %}<p class="muted">Not found in the document.</p>{% endif %}
+        </div>
+        <div>
+          <h2>Generated summary <span class="label label-generated">machine-generated</span></h2>
+          {% if s.abstract.generated_summary %}<p class="prose">{{ s.abstract.generated_summary }}</p>
+          {% else %}<p class="muted">Not analyzed yet.</p>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card" id="metadata">
+      <div class="card-head">
+        <h2>Bibliographic metadata</h2>
+        <form method="post" action="{{ url_for('confirm_all', pid=project.id, sid=s.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-small" type="submit" title="Mark every filled, unvalidated field as validated">Confirm all filled fields</button>
+        </form>
+      </div>
+      <p class="muted small">Candidate values are machine-extracted. <strong>Confirm</strong> a correct value, or edit it and <strong>Save</strong> — both mark it as validated. Lists (authors, keywords) are separated by “;”.</p>
+      <div class="table-wrap">
+      <table class="meta">
+        <tbody>
+          <tr>
+            <th>type</th>
+            <td colspan="2">
+              <form method="post" action="{{ url_for('set_metadata', pid=project.id, sid=s.id) }}" class="meta-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="field" value="type">
+                <select name="value">{% for t in SOURCE_TYPES %}<option value="{{ t }}" {{ 'selected' if t == s.type }}>{{ t.replace('_', ' ') }}</option>{% endfor %}</select>
+                <button class="btn btn-small" type="submit">Save</button>
+              </form>
+            </td>
+            <td>{% set tp = s.type_provenance or {} %}
+              {% if tp.source == 'researcher' %}<span class="prov prov-validated">✓ researcher</span>
+              {% else %}<span class="prov prov-candidate">{{ tp.extractor or tp.source or 'unknown' }}{% if tp.confidence %} · {{ '%.0f' % (tp.confidence * 100) }}%{% endif %}</span>{% endif %}
+            </td>
+          </tr>
+          {% for name in METADATA_FIELDS %}
+          {% set entry = s.metadata[name] %}
+          <tr class="{{ 'row-validated' if entry.validated }}">
+            <th><label for="f-{{ name }}">{{ {'doi': 'DOI', 'url': 'URL'}.get(name, name.replace('_', ' ')) }}</label></th>
+            <td colspan="2">
+              <form method="post" action="{{ url_for('set_metadata', pid=project.id, sid=s.id) }}" class="meta-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="field" value="{{ name }}">
+                <input id="f-{{ name }}" name="value" value="{{ entry.value|fieldtext }}"
+                       {% if name == 'publication_year' %}inputmode="numeric" pattern="\d{4}"{% endif %}
+                       {% if name == 'access_date' %}type="date"{% endif %}>
+                <button class="btn btn-small" type="submit" name="action" value="set">Save</button>
+                {% if entry.value not in (none, '', []) and not entry.validated %}
+                <button class="btn btn-small btn-confirm" type="submit" name="action" value="confirm" formnovalidate>Confirm</button>
+                {% endif %}
+              </form>
+            </td>
+            <td>{{ provenance(entry) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    {% if a %}
+    {% set m = a.methodology or {} %}
+    <div class="card">
+      <div class="card-head">
+        <h2>Analysis <span class="label label-generated">requires validation</span></h2>
+        <span class="muted small">{{ a.engine }}{% if a.processing.analysis_model %} · {{ a.processing.analysis_model }}{% endif %} · {{ a.processing.prompt_version }} · {{ a.processing.processed_at|when }}{% if a.confidence is not none %} · confidence {{ '%.0f' % (a.confidence * 100) }}%{% endif %}</span>
+      </div>
+      {% if a.warnings %}<ul class="warnings">{% for w in a.warnings %}<li>{{ w }}</li>{% endfor %}</ul>{% endif %}
+
+      <dl class="facts">
+        <dt>Research problem</dt><dd>{{ a.research_problem }}</dd>
+        <dt>Objective</dt><dd>{{ a.research_objective }}</dd>
+        <dt>Theoretical framework</dt><dd>{{ a.theoretical_framework }}</dd>
+        <dt>Methodology</dt><dd><span class="badge">{{ (m.approach or 'unknown').replace('_', ' ') }}</span> {{ m.description }}</dd>
+        <dt>Population / sample</dt><dd>{{ m.population_sample }}</dd>
+        <dt>Data collection</dt><dd>{{ m.data_collection }}</dd>
+        <dt>Analysis method</dt><dd>{{ m.analysis_method }}</dd>
+        <dt>Relevance to project</dt><dd>{{ a.relevance_to_project }}</dd>
+      </dl>
+
+      <h3>Research questions</h3>{{ evidence_list(a.research_questions) }}
+      {% if a.hypotheses %}<h3>Hypotheses</h3>{{ evidence_list(a.hypotheses) }}{% endif %}
+      <h3>Main findings</h3>{{ evidence_list(a.main_findings) }}
+      <h3>Contributions</h3>{{ evidence_list(a.contributions) }}
+      <h3>Limitations</h3>{{ evidence_list(a.limitations) }}
+      <h3>Research gaps <span class="label label-generated">hypotheses</span></h3>{{ evidence_list(a.research_gaps) }}
+      <h3>Conclusions</h3><p class="prose">{{ a.conclusions }}</p>
+      <h3>Future research</h3>{{ evidence_list(a.future_research) }}
+
+      {% if a.definitions %}
+      <h3>Definitions</h3>
+      <dl class="facts">{% for d in a.definitions %}<dt>{{ d.term }}</dt><dd>{{ d.definition }}{% if d.page %} <span class="loc">p. {{ d.page }}</span>{% endif %}</dd>{% endfor %}</dl>
+      {% endif %}
+      <dl class="facts">
+        <dt>Concepts</dt><dd>{% for c in a.relevant_concepts %}<span class="tag">{{ c }}</span>{% else %}<span class="muted">—</span>{% endfor %}</dd>
+        <dt>Theories</dt><dd>{{ a.theories|join('; ') or '—' }}</dd>
+        <dt>Cited authors</dt><dd>{{ a.frequently_cited_authors|join('; ') or '—' }}</dd>
+      </dl>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside>
+    <div class="card form">
+      <h2>Analysis</h2>
+      {% if a %}<p class="muted small">Analyzed {{ a.processing.processed_at|when }} with {{ a.engine }}.</p>{% else %}<p class="muted small">Not analyzed yet.</p>{% endif %}
+      <form method="post" action="{{ url_for('analyze', pid=project.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="source" value="{{ s.id }}">
+        <label>Engine {{ engine_select() }}</label>
+        <button class="btn btn-primary" type="submit" {{ 'disabled' if running or (s.conversion or {}).status == 'failed' }}>{{ 'Re-analyze' if a else 'Analyze' }}</button>
+      </form>
+    </div>
+
+    <form class="card form" method="post" action="{{ url_for('set_status', pid=project.id, sid=s.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Review status</h2>
+      <label>Status
+        <select name="status">{% for st in STATUSES %}<option value="{{ st }}" {{ 'selected' if st == s.status }}>{{ st.replace('_', ' ') }}</option>{% endfor %}</select>
+      </label>
+      <label>Note <span class="hint">optional, kept in history</span><input name="note" placeholder="e.g. meets inclusion criteria"></label>
+      <button class="btn" type="submit">Update status</button>
+    </form>
+
+    <form class="card form" method="post" action="{{ url_for('set_tags', pid=project.id, sid=s.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Tags</h2>
+      <label><span class="hint">comma-separated</span><input name="tags" value="{{ s.tags|join(', ') }}"></label>
+      <button class="btn" type="submit">Save tags</button>
+    </form>
+
+    <form class="card form" id="notes" method="post" action="{{ url_for('add_note', pid=project.id, sid=s.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Researcher notes</h2>
+      {% if s.researcher_notes %}<div class="notes">{{ s.researcher_notes }}</div>{% endif %}
+      <label><span class="hint">your interpretation — never overwritten by analysis</span><textarea name="note" rows="3"></textarea></label>
+      <button class="btn" type="submit">Add note</button>
+    </form>
+
+    <div class="card">
+      <h2>Conversion</h2>
+      {% set c = s.conversion or {} %}
+      {% set v = c.validation or {} %}
+      <p><span class="badge conv-{{ c.status }}">{{ (c.status or 'unknown').replace('_', ' ') }}</span>
+        <span class="muted small">{{ c.converter }}{% if c.page_count %} · {{ c.page_count }} pages{% endif %}{% if v.words %} · {{ v.words }} words{% endif %}</span></p>
+      {% if c.error %}<p class="warn-text">{{ c.error }}</p>{% endif %}
+      <ul class="checks">
+        {% for ch in v.checks or [] %}<li class="{{ 'ok' if ch.passed else ch.severity }}">{{ '✓' if ch.passed else ('!' if ch.severity == 'warning' else '✗') }} {{ ch.check.replace('_', ' ') }} <span class="muted small">— {{ ch.detail }}</span></li>{% endfor %}
+        {% for w in c.warnings or [] %}<li class="warning">! {{ w }}</li>{% endfor %}
+      </ul>
+      <p class="muted small">Original: {{ s.original_file.name }}<br>Imported {{ s.imported_at|when }}</p>
+    </div>
+
+    <details class="card">
+      <summary><h2>History</h2></summary>
+      <ol class="history">
+        {% for h in s.history|reverse %}<li><span class="muted small">{{ h.at|when }}</span> {{ h.event.replace('_', ' ') }}{% if h.status %} → {{ h.status }}{% endif %}{% if h.field %} ({{ h.field }}){% endif %}{% if h.note %} — “{{ h.note }}”{% endif %}</li>{% endfor %}
+      </ol>
+    </details>
+  </aside>
+</div>
+{% endblock %}

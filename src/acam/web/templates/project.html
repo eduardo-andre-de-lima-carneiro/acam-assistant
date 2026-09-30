@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, engine_select with context %}
+{% block title %}{{ info.title }}{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>{{ info.title }}</h1>
+    {% if info.description %}<p class="muted">{{ info.description }}</p>{% endif %}
+    {% for q in info.research_questions %}<p class="rq">{{ q }}</p>{% endfor %}
+  </div>
+  <div class="head-actions">
+    <a class="btn" href="{{ url_for('matrix', pid=project.id) }}">Literature matrix</a>
+    <a class="btn" href="{{ url_for('references', pid=project.id) }}">References</a>
+    <a class="btn btn-ghost" href="{{ url_for('download', pid=project.id, name='catalog.json') }}">Export JSON</a>
+  </div>
+</section>
+
+{% if no_worker %}
+<div class="flash flash-warn" role="alert">
+  Analyses are queued but no analysis worker is running. Start one with <code>acam worker</code>
+  (or the <code>worker</code> service in Docker Compose); queued jobs will then be processed.
+</div>
+{% endif %}
+
+<section class="stats" aria-label="Sources by status">
+  <div class="stat"><span class="stat-n">{{ sources|length }}</span><span>sources</span></div>
+  {% for st in STATUSES if statuses[st] %}
+  <div class="stat"><span class="stat-n">{{ statuses[st] }}</span>{{ status_badge(st) }}</div>
+  {% endfor %}
+</section>
+
+<div class="grid-main">
+  <section>
+    <div class="card">
+      <div class="card-head">
+        <h2>Sources</h2>
+        <div class="filters">
+          <input type="search" id="filter-text" placeholder="Filter by title, author, id…" aria-label="Filter sources">
+          <select id="filter-status" aria-label="Filter by status">
+            <option value="">All statuses</option>
+            {% for st in STATUSES %}<option value="{{ st }}">{{ st.replace('_', ' ') }}</option>{% endfor %}
+          </select>
+          {% if tags %}
+          <select id="filter-tag" aria-label="Filter by tag">
+            <option value="">All tags</option>
+            {% for t in tags %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if sources %}
+      <form method="post" action="{{ url_for('analyze', pid=project.id) }}" id="bulk-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="table-wrap">
+        <table class="sources" id="sources-table">
+          <thead><tr>
+            <th class="check"><input type="checkbox" id="select-all" aria-label="Select all"></th>
+            <th>ID</th><th>Title</th><th>Authors</th><th class="num">Year</th><th>Type</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+          {% for s in sources %}
+            {% set title = value_of(s.metadata, 'title', s.original_file.name) %}
+            {% set authors = value_of(s.metadata, 'authors', []) %}
+            <tr data-status="{{ s.status }}" data-tags="{{ s.tags|join(',') }}"
+                data-search="{{ (s.id ~ ' ' ~ title ~ ' ' ~ authors|join(' ') ~ ' ' ~ s.original_file.name)|lower }}">
+              <td class="check"><input type="checkbox" name="source" value="{{ s.id }}" aria-label="Select {{ s.id }}"></td>
+              <td class="mono">{{ s.id }}</td>
+              <td>
+                <a href="{{ url_for('source_view', pid=project.id, sid=s.id) }}" class="title-link">{{ title }}</a>
+                {% if s.tags %}<div class="tags">{% for t in s.tags %}<span class="tag">{{ t }}</span>{% endfor %}</div>{% endif %}
+                {% if (s.conversion or {}).status == 'failed' %}<div class="warn-text">conversion failed</div>{% endif %}
+              </td>
+              <td>{{ authors[:2]|join('; ') }}{% if authors|length > 2 %} et al.{% endif %}</td>
+              <td class="num">{{ value_of(s.metadata, 'publication_year', '') }}</td>
+              <td>{{ s.type.replace('_', ' ') }}</td>
+              <td>
+                {% if s.id in active %}<span class="badge status-running"><span class="spinner" aria-hidden="true"></span> analyzing</span>
+                {% else %}{{ status_badge(s.status) }}{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        <div class="bulk-bar">
+          {{ engine_select() }}
+          <button class="btn btn-primary" type="submit">Analyze selected</button>
+          <span class="muted small">No selection = all sources pending analysis</span>
+        </div>
+      </form>
+      {% else %}
+      <p class="muted empty">No sources yet. Import files on the right.</p>
+      {% endif %}
+    </div>
+
+    {% if jobs %}
+    <div class="card" id="jobs" data-poll="{{ url_for('jobs_api', pid=project.id) }}" data-active="{{ active|length }}">
+      <h2>Recent analysis jobs</h2>
+      <ul class="jobs">
+        {% for j in jobs %}
+        <li>
+          <span class="badge job-{{ j.state }}">{% if j.state in ('queued','running') %}<span class="spinner" aria-hidden="true"></span> {% endif %}{{ j.state }}</span>
+          <a class="mono" href="{{ url_for('source_view', pid=project.id, sid=j.source) }}">{{ j.source }}</a>
+          <span class="muted small">{{ j.engine }} · {{ j.queued_at|when }}</span>
+          {% if j.error %}<div class="warn-text">{{ j.error }}</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside>
+    <form class="card form" method="post" enctype="multipart/form-data" action="{{ url_for('upload', pid=project.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Import sources</h2>
+      <label class="dropzone" id="dropzone">
+        <input type="file" name="files" multiple accept="{% for f in formats %}.{{ f }}{% if not loop.last %},{% endif %}{% endfor %}" id="file-input">
+        <span class="dz-title">Drop files here or click to browse</span>
+        <span class="dz-hint">{{ formats|join(', ')|upper }}</span>
+        <span class="dz-files" id="dz-files"></span>
+      </label>
+      <label>Source type
+        <select name="type">
+          <option value="">Detect automatically</option>
+          {% for t in SOURCE_TYPES %}<option value="{{ t }}">{{ t.replace('_', ' ') }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Tags <span class="hint">comma-separated</span><input name="tags" placeholder="llm, code-review"></label>
+      <label class="inline"><input type="checkbox" name="analyze" value="1" checked> Analyze after import</label>
+      <label>Engine {{ engine_select() }}</label>
+      <button class="btn btn-primary" type="submit">Import</button>
+    </form>
+
+    <details class="card form">
+      <summary><h2>Project definition</h2></summary>
+      <form method="post" action="{{ url_for('project_settings', pid=project.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Title <input name="title" value="{{ info.title }}" required></label>
+        <label>Description <textarea name="description" rows="2">{{ info.description }}</textarea></label>
+        <label>Research problem <textarea name="research_problem" rows="2">{{ info.research_problem }}</textarea></label>
+        <label>Research questions <span class="hint">one per line</span>
+          <textarea name="questions" rows="3">{{ info.research_questions|join('\n') }}</textarea></label>
+        <label>Objectives <span class="hint">one per line</span>
+          <textarea name="objectives" rows="2">{{ info.objectives|join('\n') }}</textarea></label>
+        <label>Scope <textarea name="scope" rows="2">{{ info.scope }}</textarea></label>
+        <label>Inclusion criteria <span class="hint">one per line</span>
+          <textarea name="inclusion" rows="2">{{ info.inclusion_criteria|join('\n') }}</textarea></label>
+        <label>Exclusion criteria <span class="hint">one per line</span>
+          <textarea name="exclusion" rows="2">{{ info.exclusion_criteria|join('\n') }}</textarea></label>
+        <button class="btn" type="submit">Save definition</button>
+      </form>
+    </details>
+
+    <details class="card form danger">
+      <summary><h2>Delete project</h2></summary>
+      <form method="post" action="{{ url_for('delete_project', pid=project.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="small">Permanently deletes this project, its original files, Markdown, analyses and artifacts. This cannot be undone.</p>
+        <label>Type <code>{{ project.id }}</code> to confirm
+          <input name="confirm_id" autocomplete="off" required pattern="{{ project.id }}"></label>
+        <button class="btn btn-danger" type="submit">Delete project</button>
+      </form>
+    </details>
+  </aside>
+</div>
+{% endblock %}

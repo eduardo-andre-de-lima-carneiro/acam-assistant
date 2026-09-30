@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}References{% endblock %}
+{% block crumbs %}<span aria-hidden="true">/</span><span>references</span>{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>References</h1>
+    <p class="muted">ABNT style, alphabetical order. Entries flagged below still have missing or unvalidated data.</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn btn-ghost" href="?{{ '' if include else 'rejected=1' }}">{{ 'Hide' if include else 'Show' }} rejected</a>
+    <button class="btn" type="button" data-copy="#ref-list">Copy all</button>
+    <a class="btn" href="{{ url_for('download', pid=project.id, name='references.md', rejected=1 if include else None) }}">Download .md</a>
+  </div>
+</section>
+<div class="card">
+  <ol class="references" id="ref-list">
+  {% for s, ref in entries %}
+    <li>
+      <p class="reference">{{ ref.text|mdbold }}</p>
+      <p class="small">
+        <a class="mono" href="{{ url_for('source_view', pid=project.id, sid=s.id) }}">{{ s.id }}</a>
+        {% if ref.missing_fields %}<span class="warn-text">missing: {{ ref.missing_fields|join(', ') }}</span>{% endif %}
+        {% if ref.requires_validation %}<span class="prov prov-candidate">title/authors unvalidated</span>{% else %}<span class="prov prov-validated">✓ validated</span>{% endif %}
+      </p>
+    </li>
+  {% else %}
+    <li class="muted">No references yet.</li>
+  {% endfor %}
+  </ol>
+</div>
+{% endblock %}

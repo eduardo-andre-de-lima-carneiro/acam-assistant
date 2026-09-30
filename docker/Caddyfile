@@ -1,0 +1,22 @@
+# Reverse proxy with automatic HTTPS for ACAM Assistant (compose profile "tls").
+# Caddy obtains and renews a Let's Encrypt certificate for $ACAM_DOMAIN.
+
+{$ACAM_DOMAIN} {
+	encode gzip
+
+	request_body {
+		max_size 200MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy same-origin
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Caddy forwards the original Host header, which the app's CSRF origin check needs.
+	reverse_proxy acam:8000
+}

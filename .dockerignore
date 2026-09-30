@@ -1,0 +1,22 @@
+# Keep the build context small and free of secrets and local data.
+.git
+.gitignore
+.venv
+**/__pycache__
+**/*.pyc
+*.egg-info
+.pytest_cache
+.coverage
+coverage.xml
+htmlcov/
+.env
+.env.*
+!.env.example
+secrets/
+projects/
+docs/
+docker-compose*.yml
+.dockerignore
+.vscode
+.idea
+.DS_Store

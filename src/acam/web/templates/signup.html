@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<div class="auth">
+  <form class="card form" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h1>{{ 'Set up ACAM Assistant' if first else 'Create account' }}</h1>
+    {% if first %}
+    <p class="muted">No accounts exist yet. This first account will be the <strong>administrator</strong> and can create accounts for other users.</p>
+    {% else %}
+    <p class="muted">You get a private workspace where you can keep as many research projects as you need.</p>
+    {% endif %}
+    <label>Username <span class="hint">3–32 chars: a–z, 0–9, - or _</span>
+      <input name="username" autocomplete="username" autocapitalize="none" required pattern="[a-z0-9][a-z0-9_\-]{2,31}" autofocus></label>
+    <label>Display name <span class="hint">optional</span><input name="display_name" autocomplete="name"></label>
+    <label>Password <span class="hint">at least 8 characters</span>
+      <input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+    <label>Confirm password <input name="confirm" type="password" autocomplete="new-password" minlength="8" required></label>
+    <button class="btn btn-primary btn-block" type="submit">Create account</button>
+    {% if not first %}<p class="small muted center">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>{% endif %}
+  </form>
+</div>
+{% endblock %}

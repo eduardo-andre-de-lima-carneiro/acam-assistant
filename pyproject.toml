@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acam-assistant"
+version = "0.1.0"
+description = "ACAM Assistant (Academic Management Assistant): convert academic sources to Markdown, catalog them as structured JSON, analyze and synthesize."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "pypdf>=4.0",
+    "python-docx>=1.1",
+    "anthropic>=1.0",
+    "flask>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=5", "jsonschema>=4"]
+server = ["gunicorn>=23"]
+
+[project.scripts]
+acam = "acam.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+acam = ["web/templates/*.html", "web/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Coverage is measured on every run; the suite fails below 85% (see [tool.coverage.report]).
+addopts = "--cov=acam --cov-report=term-missing:skip-covered"
+
+[tool.coverage.run]
+source = ["acam"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+exclude_also = [
+    "if __name__ == .__main__.:",
+]

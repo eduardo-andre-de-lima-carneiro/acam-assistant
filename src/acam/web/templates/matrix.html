@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% block title %}Literature matrix{% endblock %}
+{% block crumbs %}<span aria-hidden="true">/</span><span>matrix</span>{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Literature matrix</h1>
+    <p class="muted">Generated from the structured catalog — edit sources, not this table. Machine-extracted cells require validation.</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn btn-ghost" href="?{{ '' if include else 'rejected=1' }}">{{ 'Hide' if include else 'Show' }} rejected</a>
+    <a class="btn" href="{{ url_for('download', pid=project.id, name='literature-matrix.md', rejected=1 if include else None) }}">Download .md</a>
+    <a class="btn" href="{{ url_for('download', pid=project.id, name='literature-matrix.csv', rejected=1 if include else None) }}">Download .csv</a>
+  </div>
+</section>
+<div class="card table-wrap">
+  <table class="matrix">
+    <thead><tr><th>ID</th><th>Author</th><th class="num">Year</th><th>Type</th><th>Title</th><th>Objective</th><th>Methodology</th><th>Main findings</th><th>Research gaps</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="mono"><a href="{{ url_for('source_view', pid=project.id, sid=r.id) }}">{{ r.id }}</a></td>
+        <td>{{ r.author }}</td>
+        <td class="num">{{ r.year }}</td>
+        <td>{{ r.type.replace('_', ' ') }}</td>
+        <td>{{ r.title }}</td>
+        <td>{{ r.objective if r.objective and r.objective != 'unknown' else '—' }}</td>
+        <td>{{ (r.methodology or '—').replace('_', ' ') }}</td>
+        <td>{% if r.findings %}<ul>{% for f in r.findings %}<li>{{ f }}</li>{% endfor %}</ul>{% else %}—{% endif %}</td>
+        <td>{% if r.gaps %}<ul>{% for g in r.gaps %}<li>{{ g }}</li>{% endfor %}</ul>{% else %}—{% endif %}</td>
+        <td>{{ status_badge(r.status) }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="10" class="muted">No sources yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
