@@ -103,7 +103,7 @@ with confidence ≤ 0.5. A type given at import is recorded as the researcher's.
 
 ## 5. Build the reference
 
-`references.abnt.build_reference(record)` uses the README's ABNT-based structures:
+`references.abnt.build_reference(record)` uses the specification's ABNT-based structures:
 
 | Types | Pattern |
 | ----- | ------- |

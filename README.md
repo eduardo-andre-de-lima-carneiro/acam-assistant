@@ -1,1941 +1,294 @@
 # ACAM Assistant
 
-**ACAM** stands for **Academic Management**. ACAM Assistant helps researchers manage their academic work, starting with literature reviews.
+**ACAM** stands for **Academic Management**. ACAM Assistant helps students,
+researchers and professors manage academic work, starting with **literature
+reviews**: it organizes sources, converts them to a standard format, catalogs
+their bibliographic data, analyzes each one, and produces academic artifacts.
+The researcher stays in control of every interpretation and decision.
 
-> A structured research assistant for organizing, cataloging, analyzing, and synthesizing academic literature while reducing the manual effort involved in systematic literature reviews.
+> The goal is not to automate the researcher's thinking. The goal is to remove
+> repetitive work so researchers can spend more time thinking.
 
-## Overview
-
-**ACAM Assistant** (Academic Management Assistant) is a research-oriented project designed to reduce the time and cognitive effort required to perform literature reviews and related academic research activities.
-
-Literature reviews are often labor-intensive because researchers must manually:
-
-- Find relevant academic sources;
-- Download and organize documents;
-- Read and extract relevant information;
-- Identify authors, publication dates, methodologies, and research objectives;
-- Catalog references;
-- Compare studies;
-- Identify similarities, differences, and research gaps;
-- Maintain consistent bibliographic information;
-- Create summaries and analytical notes;
-- Produce academic artifacts based on the collected evidence.
-
-This project aims to support these activities through a structured and reproducible workflow.
-
-The system should help **students, researchers, professors, and academic professionals** organize information from:
-
-- Academic papers;
-- Journal articles;
-- Books;
-- Theses and dissertations;
-- Conference papers;
-- Technical and scientific reports;
-- Websites and online academic resources;
-- Other relevant documentary sources.
-
-The central principle of the project is:
-
-> **Documents should be converted into a standardized Markdown representation before any analytical processing takes place.**
-
-This creates a common intermediate format that can be processed consistently regardless of the original document type.
+**Version 0.1.0 (MVP)** · Python 3.10+ · MIT License
 
 ---
 
-# Project Goals
+## Contents
 
-## Primary Goal
-
-Develop a system capable of supporting the literature review process by transforming heterogeneous academic sources into structured, searchable, analyzable, and reusable research information.
-
-The system should reduce the amount of repetitive manual work required from researchers while preserving researcher control over interpretation and academic decisions.
-
-## Secondary Goals
-
-The system should help researchers:
-
-1. Import academic documents;
-2. Convert supported files into Markdown;
-3. Preserve relevant document structure;
-4. Extract bibliographic metadata;
-5. Generate an abstract or structured summary;
-6. Catalog academic sources;
-7. Organize sources by research project;
-8. Analyze individual documents;
-9. Compare multiple sources;
-10. Identify recurring concepts and themes;
-11. Identify methodological approaches;
-12. Identify research gaps;
-13. Track relevant findings;
-14. Maintain structured references;
-15. Generate academic artifacts;
-16. Reuse previously cataloged sources;
-17. Maintain reproducibility of the literature review process.
+- [Quick start](#quick-start)
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Using the web interface](#using-the-web-interface)
+- [Using the command line](#using-the-command-line)
+- [Configuration](#configuration)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Development](#development)
+- [Project status and roadmap](#project-status-and-roadmap)
+- [License](#license)
 
 ---
 
-# Core Principle
+## Quick start
 
-The system follows a document-processing pipeline:
+### Option A: on your computer
 
-````text
-Original Source
-      │
-      ▼
-Document Import
-      │
-      ▼
-Format Conversion
-      │
-      ▼
-Markdown Representation
-      │
-      ▼
-Content Validation
-      │
-      ▼
-Metadata Extraction
-      │
-      ▼
-Content Analysis
-      │
-      ▼
-Structured JSON Catalog
-      │
-      ├──────────────┐
-      ▼              ▼
-Individual Analysis  Cross-source Analysis
-      │              │
-      └───────┬──────┘
-              ▼
-       Research Synthesis
-              │
-              ▼
-      Academic Artifacts
-````
+```bash
+git clone <repository-url> acam-assistant && cd acam-assistant
+python3 -m venv .venv
+source .venv/bin/activate              # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+acam web                               # open http://127.0.0.1:8000
+```
 
-The **Markdown document is the canonical analytical representation** of the original source.
+The first visit asks you to create the **administrator** account. Then create a
+project, drag in some PDFs, and they are converted and analyzed. You can try it
+with [`examples/sample-article.md`](examples/sample-article.md).
 
-The original file should be preserved whenever possible, but analytical operations must operate on the generated Markdown representation.
+### Option B: with Docker
 
+```bash
+cp .env.example .env                   # optional: API key, first admin, HTTPS domain
+docker compose up -d --build           # open http://127.0.0.1:8000
+```
 
-# Main Features
+### Enable AI analysis (optional)
 
-## 1. Document Import
+Without an API key, the offline **heuristic** engine is used. To have Claude read
+and analyze each source:
 
-The system should allow researchers to provide documents from different sources and formats.
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...    # or put it in .env for Docker
+```
 
-Potential supported formats include:
-
-* PDF
-* DOCX
-* EPUB
-* TXT
-* HTML
-* Markdown
-* Other formats that can be reliably converted to Markdown
-
-The system should preserve the original document whenever possible.
-
-### Requirements
-
-For each imported document, the system should:
-
-* Generate a unique identifier;
-* Record the original filename;
-* Record the original file type;
-* Record the import date;
-* Store the original source;
-* Convert the document to Markdown;
-* Store the generated Markdown;
-* Associate the document with a research project.
+The header of the web interface shows which engine is active.
 
 ---
 
-# 2. Mandatory Markdown Conversion
+## Features
 
-## Principle
+**Sources and conversion**
+- Import **PDF, DOCX, TXT, Markdown and HTML**. Each file is converted to a
+  canonical **Markdown** representation that keeps headings, tables and page
+  numbers.
+- Conversion quality checks: empty or garbled text, missing sections, and
+  scanned PDFs that need OCR.
+- The original file is kept unchanged. Duplicates are detected.
 
-All documents must be converted into Markdown **before analysis**.
+**Cataloging**
+- Candidate bibliographic metadata (title, authors, year, DOI, journal, volume,
+  pages, keywords, abstract), each with a **confidence score** and its
+  **origin**.
+- **ABNT-style references** for books, articles and websites, with placeholders
+  for missing data instead of invented values.
+- Tags, notes, and a review status lifecycle (`imported → … → validated / rejected → included`).
 
-The analytical engine must never depend directly on the original PDF, DOCX, EPUB, or other source format.
+**Analysis**
+- Per-source analysis: research problem, objective, questions, methodology,
+  findings, limitations, contributions, research gaps, concepts and theories.
+- Every finding carries its **section, page and a verbatim quote**.
+- Two engines: **Claude** (structured outputs) or an **offline heuristic** engine.
+- The author's abstract and the generated summary are always kept apart.
+
+**Researcher in the loop**
+- Nothing machine-generated counts as validated until you **confirm** or **edit** it.
+- Values you validated are never overwritten by later analyses.
+- Full event history per source; every analysis records engine, model and prompt version.
+
+**Artifacts**
+- Literature matrix (Markdown / CSV), ABNT reference list, per-source analysis
+  reports, and a complete JSON export.
+
+**Multi-user and operations**
+- **Accounts with private workspaces:** each user has their own space with any
+  number of projects.
+- Web interface and command line over the same core.
+- Background analysis through a durable job queue and separate workers. Safe
+  concurrent use by many users and processes.
+- Container image with Docker Compose, optional automatic HTTPS, and health checks.
+
+---
+
+## How it works
 
 ```text
-PDF ──────┐
-DOCX ─────┤
-EPUB ─────┤
-HTML ─────┤
-TXT ──────┤
-          ▼
-    Markdown Converter
-          │
-          ▼
-   Canonical Markdown
-          │
-          ▼
-       Analysis
+Original file ─► Markdown ─► Validation ─► Candidate metadata ─► Analysis ─► Researcher validation ─► Artifacts
+ (kept as is)    (canonical)                 (with confidence)     (evidence)    (confirm / edit)        (matrix, references…)
 ```
 
-This design provides a standardized representation for downstream processing.
+1. **Original documents** stay authoritative and are never modified.
+2. **Markdown** is the only input to analysis, whatever the original format.
+3. **Structured JSON** holds everything derived, with provenance and validation status.
+4. **Artifacts** are always regenerated from the JSON, never edited by hand.
 
-## Why Markdown?
-
-Markdown provides several advantages:
-
-- Human-readable representation;
-- Easy version control;
-- Simple text processing;
-- Compatibility with LLM-based analysis;
-- Easy transformation into HTML, PDF, DOCX, and other formats;
-- Preservation of headings and logical structure;
-- Reduced dependency on proprietary document formats;
-- Easier debugging;
-- Easier comparison between processing stages.
+Projects are plain folders of JSON and Markdown, easy to back up, move or put
+under Git. Details: [design overview](docs/design/overview.md) and
+[processing pipeline](docs/design/processing-pipeline.md).
 
 ---
 
-# 3. Document Structure Preservation
+## Using the web interface
 
-The conversion process should attempt to preserve the logical structure of the original document.
-
-For example:
-
-```markdown
-# Article Title
-
-## Abstract
-
-...
-
-## 1. Introduction
-
-...
-
-## 2. Theoretical Framework
-
-...
-
-## 3. Methodology
-
-...
-
-## 4. Results
-
-...
-
-## 5. Discussion
-
-...
-
-## 6. Conclusion
-
-...
-
-## References
-
-...
+```bash
+acam web                               # http://127.0.0.1:8000 (listens on this computer only)
 ```
 
-When possible, the system should preserve:
+| Page | What you do there |
+| ---- | ----------------- |
+| **My projects** | create projects; each user only ever sees their own |
+| **Project** | define research questions, objectives, scope and inclusion/exclusion criteria; drag and drop files; filter sources; analyze in bulk; follow analysis jobs |
+| **Source** | compare the author's abstract with the generated summary; confirm or correct metadata (badges show each value's origin and confidence); read the analysis with evidence; set review status, tags and notes; open the Markdown or the original file |
+| **Literature matrix / References** | view and download the matrix (`.md`, `.csv`) and the ABNT reference list |
+| **Account** | change your password; administrators create accounts |
 
-- Title;
-- Authors;
-- Abstract;
-- Keywords;
-- Headings;
-- Subheadings;
-- Paragraphs;
-- Tables;
-- Figures descriptions;
-- Citations;
-- Footnotes;
-- References;
-- Appendices.
-
-The system should not invent missing content.
-
-If information cannot be reliably extracted, the field should be marked as unknown or requiring validation.
+Accounts: the first visitor becomes the administrator. Administrators add users
+on the Account page. Start with `acam web --allow-signup` to let people register
+themselves.
 
 ---
 
-# 4. Academic Source Catalog
+## Using the command line
 
-Each source should be cataloged in a structured JSON representation.
+The `acam` command covers the same workflow, plus administration:
 
-The JSON catalog is the **machine-readable research record** for each project.
+```bash
+# Create a project and import sources
+acam init "AI in Software Engineering" --id ai-se -q "How is AI applied to code review?"
+acam import ai-se examples/sample-article.md papers/*.pdf --tag llm
 
-The catalog should contain information about:
+# Analyze (use --engine heuristic to stay offline, --queue to hand it to the worker)
+acam analyze ai-se
 
-- Source identification;
-- Bibliographic metadata;
-- Source type;
-- Authors;
-- Publication information;
-- Abstract;
-- Keywords;
-- Research objective;
-- Methodology;
-- Main findings;
-- Contributions;
-- Limitations;
-- Relevant concepts;
-- Research questions;
-- References;
-- Researcher's notes;
-- Analysis status.
+# Review and validate
+acam list ai-se
+acam show ai-se source-001
+acam confirm ai-se source-001 title authors doi
+acam set ai-se source-001 publisher "Springer"
+acam status ai-se source-001 validated --note "meets inclusion criteria"
 
----
-
-# Project-Based Organization
-
-Each literature review should be treated as an independent research project.
-
-Example:
-
-```text
-projects/
-│
-├── project-001/
-│   ├── project.json
-│   ├── sources.json
-│   │
-│   ├── original/
-│   │   ├── paper-001.pdf
-│   │   ├── paper-002.pdf
-│   │   └── book-001.epub
-│   │
-│   ├── markdown/
-│   │   ├── paper-001.md
-│   │   ├── paper-002.md
-│   │   └── book-001.md
-│   │
-│   ├── analysis/
-│   │   ├── paper-001.json
-│   │   ├── paper-002.json
-│   │   └── book-001.json
-│   │
-│   └── artifacts/
-│       ├── literature-review.md
-│       ├── synthesis.md
-│       └── references.md
-│
-└── project-002/
-    └── ...
+# Produce artifacts (written to <project>/artifacts/)
+acam matrix ai-se            # literature-matrix.md   (--csv for spreadsheets)
+acam references ai-se        # references.md          (ABNT, alphabetical)
+acam export ai-se            # catalog.json
 ```
 
-The exact directory structure may evolve as implementation decisions are made.
+Accounts and multi-user use:
 
----
-
-# Structured JSON Model
-
-Each project should maintain a structured JSON file containing the relevant information extracted from its sources.
-
-Example:
-
-```json
-{
-  "project": {
-    "id": "project-001",
-    "title": "Artificial Intelligence in Software Engineering",
-    "description": "Systematic literature review about the application of AI in software engineering.",
-    "created_at": "2026-09-29",
-    "updated_at": "2026-09-29"
-  },
-  "sources": [
-    {
-      "id": "source-001",
-      "type": "journal_article",
-
-      "original_file": {
-        "name": "article.pdf",
-        "format": "pdf"
-      },
-
-      "markdown_file": "markdown/source-001.md",
-
-      "bibliographic_reference": "AUTHOR, First Name. Article title. Journal Name, v. 10, n. 2, p. 10-20, 2025.",
-
-      "metadata": {
-        "authors": [],
-        "title": "",
-        "publication_year": null,
-        "publisher": "",
-        "journal": "",
-        "volume": "",
-        "issue": "",
-        "pages": "",
-        "doi": "",
-        "url": "",
-        "access_date": ""
-      },
-
-      "abstract": "",
-
-      "keywords": [],
-
-      "research_objective": "",
-
-      "research_questions": [],
-
-      "methodology": "",
-
-      "main_findings": [],
-
-      "main_contributions": [],
-
-      "limitations": [],
-
-      "relevant_concepts": [],
-
-      "research_gaps": [],
-
-      "researcher_notes": "",
-
-      "analysis": {
-        "status": "pending",
-        "analyzed_at": null,
-        "confidence": null
-      }
-    }
-  ]
-}
+```bash
+acam user add maria --name "Maria"     # prompts for a password
+acam user list
+acam --user maria projects             # any command can work in a user's workspace
+acam worker                            # background analysis worker
+acam jobs                              # queue status
 ```
 
----
-
-# Source Analysis
-
-The system should support structured analysis of each source.
-
-The analysis should not be limited to generating a generic summary.
-
-The goal is to extract information that can later support academic reasoning and synthesis.
-
-## Minimum Analysis Fields
-
-Each source should attempt to identify:
-
-### Bibliographic Information
-
-- Authors;
-- Title;
-- Publication year;
-- Publisher;
-- Journal;
-- Volume;
-- Issue;
-- Pages;
-- DOI;
-- URL;
-- Edition;
-- Publication location;
-- Access date when applicable.
-
-### Content Information
-
-- Abstract;
-- Keywords;
-- Research problem;
-- Research objective;
-- Research questions;
-- Hypotheses, when applicable;
-- Theoretical framework;
-- Methodology;
-- Population/sample, when applicable;
-- Data collection method;
-- Analysis method;
-- Main findings;
-- Conclusions;
-- Limitations;
-- Contributions;
-- Future research recommendations.
-
-### Literature Review Information
-
-The system should also identify:
-
-- Concepts relevant to the research project;
-- Definitions proposed by the authors;
-- Important theories;
-- Frequently cited authors;
-- Important references;
-- Agreements with other studies;
-- Contradictions with other studies;
-- Evidence supporting specific claims;
-- Research gaps;
-- Potential relevance to the research project.
+Without `--user`, commands work in the data root as a single-user workspace.
+Run `acam --help` or see the full [CLI reference](docs/integration/cli-reference.md).
 
 ---
 
-# Abstract Generation
+## Configuration
 
-Every imported source should have an abstract or structured summary associated with it.
+Everything is configured through environment variables (or `.env` for Docker).
+The most common ones:
 
-Important distinction:
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `ACAM_HOME` | `./projects` | data root: accounts, workspaces, job queue |
+| `ANTHROPIC_API_KEY` | — | enables Claude analysis |
+| `ACAM_MODEL` | `claude-opus-5-5` | Claude model |
+| `ACAM_ALLOW_SIGNUP` | `false` | let anyone create an account |
+| `ACAM_SECURE_COOKIES` | `false` | set to `true` when served over HTTPS |
+| `ACAM_ADMIN_USER` / `ACAM_ADMIN_PASSWORD_FILE` | — | create the first administrator at start-up (containers) |
+| `ACAM_WORKER_THREADS` | `2` | concurrent analyses per worker |
 
-> A generated abstract is a machine-generated research aid and must not automatically be treated as the author's original abstract.
-
-The system should preserve the original abstract separately when available.
-
-Recommended structure:
-
-```json
-{
-  "original_abstract": "",
-  "generated_summary": "",
-  "summary_type": "structured",
-  "generated_at": "",
-  "requires_validation": true
-}
-```
-
-The system should never fabricate an abstract when the source cannot be reliably analyzed.
+All settings, flags and limits: [configuration reference](docs/deployment/configuration.md).
+Every variable is documented in [`.env.example`](.env.example).
 
 ---
 
-# Systematic Literature Review Support
+## Deployment
 
-The system should support the major activities involved in a systematic literature review.
+| Scenario | Guide |
+| -------- | ----- |
+| Personal use on a laptop | [Local installation](docs/deployment/local.md) |
+| Research group server, **recommended** | [Container deployment](docs/deployment/container.md): Docker Compose with web + worker services, optional automatic HTTPS (`docker compose --profile tls up -d`) |
+| Server without containers | [Server deployment](docs/deployment/server.md): gunicorn, systemd, nginx |
 
-Potential workflow:
-
-```text
-Research Question
-       │
-       ▼
-Search Strategy
-       │
-       ▼
-Source Collection
-       │
-       ▼
-Deduplication
-       │
-       ▼
-Screening
-       │
-       ▼
-Eligibility Criteria
-       │
-       ▼
-Included Sources
-       │
-       ▼
-Markdown Conversion
-       │
-       ▼
-Structured Extraction
-       │
-       ▼
-Quality Assessment
-       │
-       ▼
-Evidence Synthesis
-       │
-       ▼
-Academic Artifact
-```
-
-The system should support researcher-defined criteria rather than automatically deciding whether a paper belongs in the review.
+Keep the data root on a local disk (not an NFS/SMB share), and use HTTPS for
+anything beyond your own computer. See [Security](docs/security/security.md),
+including what the Claude engine sends to Anthropic.
 
 ---
-
-# Source Classification
-
-Each source should have a controlled source type.
-
-Recommended initial taxonomy:
-
-```text
-book
-book_chapter
-journal_article
-conference_paper
-thesis
-dissertation
-technical_report
-website
-online_article
-preprint
-other
-```
-
-Example:
-
-```json
-{
-  "type": "journal_article"
-}
-```
-
----
-
-# Bibliographic Reference Standards
-
-The system should generate bibliographic references according to the source type.
-
-The initial reference model is based on the following structures.
-
----
-
-## 1. Books
-
-### Structure
-
-```text
-LAST NAME, First Name. Book title: subtitle. Edition number (if not the first). City of publication: Publisher, Year.
-```
-
-### Example
-
-```text
-SILVA, J. A. Direito ambiental constitucional. 4. ed. São Paulo: Malheiros, 2002.
-```
-
-The book title and subtitle should be represented as required by the project's formatting rules.
-
----
-
-## 2. Journal Articles
-
-### Structure
-
-```text
-LAST NAME, First Name. Article title. Journal Name, City of publication, volume, issue, page range, month and year.
-```
-
-### Example
-
-```text
-SWELLER, J. Cognitive load during problem solving: A reinterpretation. Cognitive Science, v. 12, n. 2, p. 257-285, 1988.
-```
-
----
-
-## 3. Websites and Online Pages
-
-### Structure
-
-```text
-LAST NAME, First Name. Title of the page/article. Website Name, Year of publication (if available). Disponível em: [URL]. Acesso em: date of access.
-```
-
-### Example
-
-```text
-INSTITUTO BRASILEIRO DE GEOGRAFIA E ESTATÍSTICA (IBGE). Cidades. 2021. Disponível em: ibge.gov.br. Acesso em: 15 out. 2026.
-```
-
----
-
-# Bibliographic Validation
-
-Bibliographic information extracted automatically should be considered **candidate metadata** until validated.
-
-The system should distinguish between:
-
-```text
-Extracted
-      │
-      ▼
-Normalized
-      │
-      ▼
-Validated
-```
-
-For example:
-
-```json
-{
-  "title": {
-    "value": "Example Article",
-    "source": "extracted",
-    "confidence": 0.97,
-    "validated": false
-  }
-}
-```
-
-This prevents automatically generated metadata from being treated as authoritative academic information.
-
----
-
-# Research Tags
-
-Sources should support tags for organization and filtering.
-
-Example:
-
-```json
-{
-  "tags": [
-    "artificial-intelligence",
-    "software-engineering",
-    "large-language-models",
-    "devsecops"
-  ]
-}
-```
-
-Tags can be used to:
-
-- Group related sources;
-- Filter the literature;
-- Identify research themes;
-- Support synthesis;
-- Generate thematic reports.
-
----
-
-# Relationships Between Sources
-
-The system should eventually support relationships between sources.
-
-Examples:
-
-```text
-Source A
-   │
-   ├── cites ─────────► Source B
-   │
-   ├── contradicts ───► Source C
-   │
-   ├── extends ───────► Source D
-   │
-   └── replicates ────► Source E
-```
-
-Potential relationship types:
-
-```text
-cites
-cited_by
-supports
-contradicts
-extends
-replicates
-uses_methodology_from
-builds_on
-similar_to
-```
-
-These relationships can later support knowledge graphs and evidence mapping.
-
----
-
-# Literature Synthesis
-
-Once multiple sources have been analyzed, the system should support cross-source analysis.
-
-Possible synthesis dimensions include:
-
-## Thematic Analysis
-
-Identify:
-
-- Recurring themes;
-- Emerging themes;
-- Dominant concepts;
-- Underexplored concepts.
-
-## Methodological Analysis
-
-Compare:
-
-- Research methodologies;
-- Data collection approaches;
-- Sample characteristics;
-- Analytical techniques;
-- Experimental approaches.
-
-## Findings Comparison
-
-Identify:
-
-- Consistent findings;
-- Divergent findings;
-- Contradictory results;
-- Complementary findings.
-
-## Research Gaps
-
-Identify areas where:
-
-- Evidence is limited;
-- Findings are contradictory;
-- Specific populations are underrepresented;
-- Methodologies are insufficiently explored;
-- Questions remain unanswered.
-
-Important:
-
-> Automatically identified gaps are hypotheses for researcher validation, not definitive statements about the literature.
-
----
-
-# Researcher-in-the-Loop Principle
-
-The system is intended to **assist research**, not replace academic judgment.
-
-The researcher remains responsible for:
-
-- Defining research questions;
-- Establishing inclusion/exclusion criteria;
-- Validating sources;
-- Validating extracted metadata;
-- Evaluating methodological quality;
-- Interpreting evidence;
-- Confirming research gaps;
-- Approving generated academic artifacts.
-
-The system should make its provenance visible whenever possible.
-
----
-
-# Academic Artifact Templates
-
-The project should provide reusable templates for academic work.
-
-Potential templates include:
-
-```text
-literature-review
-systematic-literature-review
-research-proposal
-research-question
-research-objective
-theoretical-framework
-methodology
-article-analysis
-book-analysis
-thesis-analysis
-critical-review
-literature-matrix
-research-gap-analysis
-bibliographic-reference
-academic-summary
-```
-
----
-
-# Literature Review Matrix
-
-A structured literature matrix can be generated from the catalog.
-
-Example:
-
-| ID   | Author   | Year | Source  | Objective | Methodology  | Main Findings | Research Gap |
-| ---- | -------- | ---: | ------- | --------- | ------------ | ------------- | ------------ |
-| S001 | Author A | 2024 | Article | ...       | Qualitative  | ...           | ...          |
-| S002 | Author B | 2023 | Article | ...       | Quantitative | ...           | ...          |
-| S003 | Author C | 2022 | Book    | ...       | Theoretical  | ...           | ...          |
-
-The matrix should be generated from the structured JSON data rather than manually maintained whenever possible.
-
----
-
-# Architecture
-
-A modular architecture is recommended.
-
-```text
-┌──────────────────────────────┐
-│          User Interface      │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│       Project Management     │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│      Document Ingestion      │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│     Format Conversion        │
-│      → Markdown              │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│     Metadata Extraction      │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│       Content Analysis       │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│       JSON Repository        │
-└──────────────┬───────────────┘
-               │
-       ┌───────┴────────┐
-       ▼                ▼
-┌──────────────┐  ┌───────────────┐
-│ Source       │  │ Cross-source  │
-│ Analysis     │  │ Synthesis     │
-└──────┬───────┘  └───────┬───────┘
-       │                  │
-       └────────┬─────────┘
-                ▼
-       ┌──────────────────┐
-       │ Academic Artifact│
-       │ Generation       │
-       └──────────────────┘
-```
-
----
-
-# Repository Structure
-
-```text
-acam-assistant/
-│
-├── README.md
-│
-├── docs/                      (implemented — see docs/README.md)
-│   ├── design/                overview, data-model, processing-pipeline, user-experience
-│   ├── architecture/          overview + decisions/ (ADRs)
-│   ├── technology/            stack
-│   ├── security/              security
-│   ├── deployment/            local, container, server, configuration
-│   ├── integration/           claude-api, cli-reference, http-interface, data-exchange, extending
-│   └── planning/              mvp-plan
-│
-├── projects/
-│   └── <project-id>/
-│       │
-│       ├── project.json
-│       ├── sources.json
-│       │
-│       ├── original/
-│       │
-│       ├── markdown/
-│       │
-│       ├── analysis/
-│       │
-│       ├── artifacts/
-│       │
-│       └── references/
-│
-├── templates/
-│   ├── source-analysis.json
-│   ├── book-analysis.md
-│   ├── article-analysis.md
-│   ├── thesis-analysis.md
-│   ├── literature-matrix.md
-│   ├── systematic-review.md
-│   └── bibliographic-reference.md
-│
-├── schemas/
-│   ├── project.schema.json
-│   ├── source.schema.json
-│   └── analysis.schema.json
-│
-├── src/
-│   ├── ingestion/
-│   ├── conversion/
-│   ├── extraction/
-│   ├── analysis/
-│   ├── synthesis/
-│   ├── references/
-│   └── artifacts/
-│
-├── tests/
-│   ├── conversion/
-│   ├── extraction/
-│   ├── analysis/
-│   └── references/
-│
-└── scripts/
-    ├── import-source
-    ├── convert-to-markdown
-    ├── analyze-source
-    └── generate-artifact
-```
-
----
-
-# End-to-End Workflow
-
-## Step 1 — Create a Research Project
-
-The researcher defines:
-
-- Project title;
-- Research problem;
-- Research questions;
-- Objectives;
-- Scope;
-- Inclusion criteria;
-- Exclusion criteria.
-
-Example:
-
-```json
-{
-  "id": "project-001",
-  "title": "AI Applications in Software Engineering",
-  "research_questions": ["How is AI being applied to software engineering?"],
-  "inclusion_criteria": [],
-  "exclusion_criteria": []
-}
-```
-
----
-
-## Step 2 — Import Sources
-
-The researcher adds:
-
-```text
-paper.pdf
-book.epub
-article.docx
-website.html
-```
-
-The system registers each source.
-
----
-
-## Step 3 — Convert Sources
-
-Each source is converted into Markdown.
-
-```text
-paper.pdf
-    ↓
-paper.md
-```
-
-The Markdown file becomes the canonical analysis input.
-
----
-
-## Step 4 — Validate Conversion
-
-The system should verify:
-
-- File was successfully converted;
-- Text is not empty;
-- Headings are present when expected;
-- Major sections were preserved;
-- Encoding is valid;
-- No obvious extraction failure occurred.
-
----
-
-## Step 5 — Extract Metadata
-
-The system identifies candidate metadata:
-
-```text
-Author
-Title
-Year
-Publisher
-Journal
-DOI
-Pages
-URL
-Abstract
-Keywords
-```
-
----
-
-## Step 6 — Analyze Content
-
-The system analyzes the Markdown representation and generates structured information.
-
-```text
-Markdown
-   │
-   ├── Metadata
-   ├── Abstract
-   ├── Objective
-   ├── Research Questions
-   ├── Methodology
-   ├── Findings
-   ├── Contributions
-   ├── Limitations
-   └── Research Gaps
-```
-
----
-
-## Step 7 — Store Results
-
-The extracted information is persisted in the project's structured JSON catalog.
-
----
-
-## Step 8 — Researcher Validation
-
-The researcher reviews the extracted information.
-
-Possible statuses:
-
-```text
-pending
-reviewing
-validated
-rejected
-needs_revision
-```
-
----
-
-## Step 9 — Cross-Source Analysis
-
-Once multiple sources are validated, the system can compare them.
-
----
-
-## Step 10 — Generate Academic Artifacts
-
-The researcher can generate:
-
-- Literature matrices;
-- Summaries;
-- Literature review sections;
-- Research gap reports;
-- Bibliographic references;
-- Theoretical framework drafts;
-- Methodological comparison;
-- Other academic artifacts.
-
-Generated artifacts should clearly distinguish:
-
-```text
-Source evidence
-Generated synthesis
-Researcher interpretation
-```
-
----
-
-# AI Usage Principles
-
-If AI or Large Language Models are used, the system should follow several principles.
-
-## 1. Evidence First
-
-AI-generated conclusions should be grounded in the Markdown source.
-
-```text
-Source
-  ↓
-Markdown
-  ↓
-Evidence
-  ↓
-Analysis
-```
-
-The model should not rely on unsupported external knowledge when analyzing a specific source.
-
----
-
-## 2. No Fabrication
-
-The system must never invent:
-
-- Authors;
-- Titles;
-- Citations;
-- Publication dates;
-- DOI numbers;
-- Findings;
-- Research methods;
-- Statistics;
-- Quotes.
-
-If information is unavailable:
-
-```text
-unknown
-```
-
-or:
-
-```text
-requires_validation
-```
-
-should be used.
-
----
-
-## 3. Traceability
-
-Where technically feasible, extracted claims should maintain a relationship with the source location.
-
-Example:
-
-```json
-{
-  "finding": "The study identified a reduction in processing time.",
-  "evidence": {
-    "source_id": "source-001",
-    "section": "Results",
-    "page": 12
-  }
-}
-```
-
-This makes the system more useful for academic verification.
-
----
-
-# Data Integrity
-
-Academic research requires reproducibility.
-
-The system should therefore preserve:
-
-- Original documents;
-- Converted Markdown;
-- Extracted metadata;
-- Analysis results;
-- Model/version information;
-- Processing date;
-- Researcher validation;
-- Generated artifacts.
-
-A recommended record is:
-
-```json
-{
-  "processing": {
-    "processed_at": "2026-09-29T20:00:00Z",
-    "processor_version": "0.1.0",
-    "analysis_model": "model-name",
-    "prompt_version": "v1",
-    "status": "validated"
-  }
-}
-```
-
----
-
-# Quality Control
-
-Each processing stage should be independently testable.
-
-## Conversion Tests
-
-Verify:
-
-- PDF → Markdown;
-- DOCX → Markdown;
-- EPUB → Markdown;
-- HTML → Markdown.
-
-## Extraction Tests
-
-Verify:
-
-- Author extraction;
-- Title extraction;
-- Publication date;
-- DOI;
-- Abstract;
-- Keywords.
-
-## Analysis Tests
-
-Verify:
-
-- Objective extraction;
-- Methodology extraction;
-- Findings;
-- Limitations;
-- Research gaps.
-
-## Reference Tests
-
-Verify:
-
-- Book reference format;
-- Journal article format;
-- Website reference format.
-
----
-
-# Future Features
-
-The architecture should allow future expansion.
-
-Potential features include:
-
-## Semantic Search
-
-Allow researchers to ask:
-
-```text
-Which papers discuss context engineering?
-```
-
-or:
-
-```text
-Which studies identified limitations related to dataset size?
-```
-
----
-
-## Research Knowledge Graph
-
-Represent relationships between:
-
-```text
-Authors
-Papers
-Concepts
-Methods
-Findings
-Research Questions
-References
-```
-
----
-
-## Citation Network
-
-Visualize:
-
-```text
-Paper A
- ├── cites → Paper B
- ├── cites → Paper C
- └── extends → Paper D
-```
-
----
-
-## Duplicate Detection
-
-Identify potentially duplicated documents using:
-
-- DOI;
-- Title;
-- Authors;
-- Publication year;
-- Similarity analysis.
-
----
-
-## Evidence Matrix
-
-Generate structured evidence tables for systematic reviews.
-
----
-
-## PRISMA Support
-
-The project may eventually support structured tracking of:
-
-- Identification;
-- Screening;
-- Eligibility;
-- Inclusion.
-
-The researcher should remain responsible for the final methodological decisions and reporting.
-
----
-
-# Source Status Lifecycle
-
-```text
-IMPORTED
-    │
-    ▼
-CONVERTED
-    │
-    ▼
-EXTRACTED
-    │
-    ▼
-ANALYZED
-    │
-    ▼
-UNDER_REVIEW
-    │
-    ├──► REJECTED
-    │
-    ▼
-VALIDATED
-    │
-    ▼
-INCLUDED
-```
-
----
-
-# Design Principles
-
-The project should follow these principles.
-
-### 1. Reproducibility
-
-The same source and processing configuration should produce traceable results.
-
-### 2. Transparency
-
-Researchers should be able to understand how information was generated.
-
-### 3. Human Validation
-
-AI-generated information should remain subject to researcher verification.
-
-### 4. Source Traceability
-
-Important claims should be traceable to their original source.
-
-### 5. Format Independence
-
-Analysis should operate on Markdown rather than proprietary document formats.
-
-### 6. Structured Data
-
-Research information should be stored in machine-readable structures.
-
-### 7. Modularity
-
-Document conversion, extraction, analysis, synthesis, and artifact generation should remain independent components.
-
-### 8. Extensibility
-
-New source types, analysis models, academic standards, and artifact templates should be easy to add.
-
----
-
-# Initial MVP Scope
-
-The first version should focus on a small but reliable workflow.
-
-## MVP
-
-### Input
-
-- PDF
-- DOCX
-- Markdown
-- TXT
-
-### Processing
-
-```text
-Import
-  ↓
-Convert
-  ↓
-Validate Markdown
-  ↓
-Extract Metadata
-  ↓
-Generate Summary
-  ↓
-Analyze Source
-  ↓
-Store JSON
-```
-
-### Output
-
-- Markdown representation;
-- Structured JSON;
-- Bibliographic reference;
-- Source summary;
-- Source analysis.
-
----
-
-# Development Roadmap
-
-## Phase 1 — Foundation
-
-- [x] Define project structure
-- [x] Define JSON schemas
-- [x] Implement project creation
-- [x] Implement source registration
-- [x] Implement document storage
-
-## Phase 2 — Conversion
-
-- [x] PDF → Markdown
-- [x] DOCX → Markdown
-- [x] TXT → Markdown
-- [x] HTML → Markdown
-- [x] Add conversion validation
-
-## Phase 3 — Metadata
-
-- [x] Extract title
-- [x] Extract authors
-- [x] Extract publication date
-- [x] Extract abstract
-- [x] Extract keywords
-- [x] Extract DOI
-- [x] Generate bibliographic references
-
-## Phase 4 — Analysis
-
-- [x] Source summarization
-- [x] Research objective extraction
-- [x] Methodology extraction
-- [x] Findings extraction
-- [x] Limitations extraction
-- [x] Research gap identification
-- [x] Structured analysis JSON
-
-## Phase 5 — Research Synthesis
-
-- [x] Literature matrix
-- [ ] Cross-source comparison
-- [ ] Theme identification
-- [ ] Methodology comparison
-- [ ] Evidence mapping
-- [ ] Research gap analysis
-
-## Phase 6 — Academic Artifacts
-
-- [ ] Literature review template
-- [ ] Research proposal template
-- [ ] Theoretical framework template
-- [ ] Methodology template
-- [ ] Academic summary template
-- [x] Reference generation
-
-## Phase 7 — Advanced Research Features
-
-- [ ] Semantic search
-- [ ] Citation graph
-- [ ] Knowledge graph
-- [x] Duplicate detection (exact file hash only)
-- [x] Evidence traceability (section + page + quote per claim)
-- [ ] PRISMA workflow support
-
----
-
-# Non-Functional Requirements
-
-The system should prioritize:
-
-| Requirement     | Description                                                  |
-| --------------- | ------------------------------------------------------------ |
-| Reproducibility | Processing should be repeatable and traceable                |
-| Reliability     | Extraction should fail safely rather than invent information |
-| Traceability    | Claims should be linked to their sources                     |
-| Maintainability | Components should remain modular                             |
-| Extensibility   | New source formats should be easy to add                     |
-| Portability     | Research projects should be exportable                       |
-| Versionability  | Markdown and JSON should work well with Git                  |
-| Transparency    | AI-generated content should be identifiable                  |
-| Validation      | Researchers must be able to review extracted information     |
-
----
-
-# Important Limitations
-
-This system is an **academic research support tool**, not an autonomous researcher.
-
-It should not automatically determine:
-
-- Whether a study is scientifically valid;
-- Whether evidence is sufficient;
-- Whether a research gap definitively exists;
-- Whether a source should be included in a systematic review;
-- Whether a methodological decision is academically appropriate.
-
-Those decisions require researcher judgment.
-
-AI-generated analysis should therefore be treated as:
-
-> **structured research assistance that requires verification.**
-
----
-
-# Research Reproducibility
-
-Each project should ideally be reproducible from:
-
-```text
-Original Documents
-       +
-Processing Configuration
-       +
-Prompt/Analysis Version
-       +
-Software Version
-       +
-Structured JSON
-       =
-Reproducible Research Dataset
-```
-
-This is particularly important when the system uses generative AI because model behavior may change over time.
-
----
-
-# Example Research Project
-
-```text
-Project:
-Systematic Literature Review on AI-Assisted Software Engineering
-
-Research Question:
-How are artificial intelligence techniques being applied
-to improve software engineering activities?
-
-Sources:
-
-S001
-├── Type: Journal Article
-├── Author: Author A
-├── Year: 2024
-├── Methodology: Systematic Review
-└── Status: Validated
-
-S002
-├── Type: Conference Paper
-├── Author: Author B
-├── Year: 2023
-├── Methodology: Experimental
-└── Status: Validated
-
-S003
-├── Type: Book
-├── Author: Author C
-├── Year: 2022
-├── Type: Theoretical
-└── Status: Validated
-```
-
-The system can then generate:
-
-```text
-                    Research Question
-                           │
-                           ▼
-                 ┌───────────────────┐
-                 │   Source Catalog   │
-                 └─────────┬─────────┘
-                           │
-            ┌──────────────┼──────────────┐
-            ▼              ▼              ▼
-        S001 Article   S002 Paper     S003 Book
-            │              │              │
-            └──────────────┼──────────────┘
-                           ▼
-                  Cross-Source Analysis
-                           │
-             ┌─────────────┼─────────────┐
-             ▼             ▼             ▼
-          Themes       Methods        Findings
-             │             │             │
-             └─────────────┼─────────────┘
-                           ▼
-                    Research Gaps
-                           │
-                           ▼
-                  Academic Synthesis
-```
-
----
-
-# Researcher + AI Collaboration Model
-
-The intended relationship is:
-
-```text
-                 RESEARCHER
-                     │
-          Defines questions
-                     │
-                     ▼
-               AI ASSISTANT
-                     │
-       ┌─────────────┼─────────────┐
-       ▼             ▼             ▼
-    Organize      Extract       Analyze
-       │             │             │
-       └─────────────┼─────────────┘
-                     ▼
-                Researcher
-                 validates
-                     │
-                     ▼
-                 Synthesis
-                     │
-                     ▼
-              Academic Artifact
-```
-
-The system should therefore optimize for **researcher productivity without obscuring researcher responsibility**.
-
----
-
-# Guiding Principle
-
-The project is based on a simple idea:
-
-> **The goal is not to automate researcher's thinking. The goal is to remove repetitive work so researchers can spend more time thinking.**
-
-Document conversion, metadata extraction, cataloging, organization, comparison, and artifact preparation are activities that can be partially automated.
-
-Critical interpretation, methodological judgment, and scientific reasoning should remain under researcher control.
-
----
-
-# Getting Started (MVP)
-
-The MVP is a Python tool, `acam`, with a local web interface and a command line. It implements the
-[Initial MVP Scope](#initial-mvp-scope) pipeline:
-
-```text
-Import → Convert → Validate Markdown → Extract Metadata → Analyze + Summarize → Store JSON
-```
-
-and generates the first artifacts from the catalog: literature matrix (Markdown/CSV),
-ABNT reference list, per-source analysis reports and a full JSON export.
-
-The implementation plan, scope decisions and known limitations are in
-[docs/planning/mvp-plan.md](docs/planning/mvp-plan.md).
 
 ## Documentation
 
-Full technical documentation is in [`docs/`](docs/README.md):
+The full documentation is in [`docs/`](docs/README.md).
 
 | Topic | Documents |
 | ----- | --------- |
-| Design | [overview & principles](docs/design/overview.md), [data model](docs/design/data-model.md), [processing pipeline](docs/design/processing-pipeline.md), [user experience](docs/design/user-experience.md) |
-| Architecture | [overview](docs/architecture/overview.md), [decision records](docs/architecture/decisions/README.md) |
-| Technology | [stack, dev setup & testing](docs/technology/stack.md) |
+| Design | [overview & principles](docs/design/overview.md) · [product specification](docs/design/specification.md) · [data model](docs/design/data-model.md) · [processing pipeline](docs/design/processing-pipeline.md) · [user experience](docs/design/user-experience.md) |
+| Architecture | [overview](docs/architecture/overview.md) · [decision records](docs/architecture/decisions/README.md) |
+| Technology | [stack, development setup & testing](docs/technology/stack.md) |
 | Security | [threat model, controls & known gaps](docs/security/security.md) |
-| Deployment | [local](docs/deployment/local.md), [container](docs/deployment/container.md), [server](docs/deployment/server.md), [configuration](docs/deployment/configuration.md) |
-| Integration | [Claude API](docs/integration/claude-api.md), [CLI](docs/integration/cli-reference.md), [HTTP](docs/integration/http-interface.md), [data exchange](docs/integration/data-exchange.md), [extending](docs/integration/extending.md) |
+| Deployment | [local](docs/deployment/local.md) · [container](docs/deployment/container.md) · [server](docs/deployment/server.md) · [configuration](docs/deployment/configuration.md) |
+| Integration | [Claude API](docs/integration/claude-api.md) · [CLI](docs/integration/cli-reference.md) · [HTTP](docs/integration/http-interface.md) · [data exchange](docs/integration/data-exchange.md) · [extending](docs/integration/extending.md) |
+| Planning | [MVP plan & roadmap](docs/planning/mvp-plan.md) |
 
-## Install
+---
 
-Requires Python 3.10+.
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-## Analysis engines
-
-| Engine      | When used                                              | What it does |
-| ----------- | ------------------------------------------------------ | ------------ |
-| `llm`       | Default when `ANTHROPIC_API_KEY` is set                | Claude (`claude-opus-5-5`) reads the canonical Markdown and fills the analysis schema with structured outputs; every claim carries section/page/quote evidence. |
-| `heuristic` | Default without credentials, or `--engine heuristic`   | Offline, rule-based, extractive. Selects verbatim sentences by section and cue phrases. Lower recall; useful for trying the tool and for tests. |
+## Development
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...     # optional; enables the llm engine
-export ACAM_MODEL=claude-opus-5-5       # optional model override
+pip install -e ".[dev,server]"
+pytest                                 # tests + coverage report; fails below 85%
+python tools/check_coverage.py         # every file must also reach 85%
+docker build --target test .           # the same checks inside the container image
 ```
 
-## Run in a container
-
-```bash
-cp .env.example .env              # optional: ANTHROPIC_API_KEY, first admin, HTTPS domain
-docker compose up -d --build      # http://127.0.0.1:8000
-docker compose --profile tls up -d --build   # public server with automatic HTTPS (Caddy)
-```
-
-Compose runs two services on one data volume. The web interface uses several
-gunicorn processes, and a separate **worker** runs analyses from a durable queue
-(`docker compose up -d --scale worker=N` for more). Both run as non-root with a
-read-only root filesystem, and both have health checks.
-Details: [docs/deployment/container.md](docs/deployment/container.md).
-
-## Web interface
-
-```bash
-acam web                 # then open http://127.0.0.1:8000
-```
-
-The first visit asks you to create the **administrator** account.
-
-### Users and projects
-
-- **Multi-user:** every user logs in and works in a **private workspace**. Other users can't see or open their projects, even with a direct URL.
-- **Multiple projects:** each user can keep any number of projects in their space, and the same project id can exist in different users' spaces.
-- **Accounts:** administrators create accounts on the **Account** page. Pass `--allow-signup` to let people register themselves. Every user can change their own password.
-- **Deleting a project:** open the project, expand "Delete project", and type the project id to confirm.
-
-On disk:
+The tests need no network or API key. They include real multi-process tests:
+parallel imports, parallel edits, several workers, and gunicorn with several processes.
 
 ```text
-projects/                  # data root ($ACAM_HOME or --workspace)
-├── users.json             # accounts (password hashes only, mode 600)
-├── .secret_key            # session signing key (mode 600)
-└── users/
-    ├── eduardo/           # one private workspace per user
-    │   ├── ai-se/
-    │   └── llm-edu/
-    └── maria/
-        └── ai-se/         # same project id, different user: fully independent
+src/acam/          application package (conversion, extraction, analysis, references,
+                   pipeline, artifacts, accounts, jobs/worker, web, cli)
+schemas/           JSON Schemas of project, source and analysis records
+tests/             pytest suite (fixtures generate PDF/DOCX at test time)
+docker/            gunicorn config, entrypoint, Caddyfile
+docs/              documentation
+examples/          sample article
+tools/             per-file coverage check
 ```
 
-### What you can do in it
-
-- **Projects:** create a project; edit its research questions, objectives, scope and inclusion/exclusion criteria.
-- **Import:** drag and drop PDF, DOCX, TXT, Markdown and HTML files, with an optional source type, tags, and "analyze after import".
-- **Sources table:** filter by text, status and tag, then analyze selected sources in bulk. Analysis runs in the background and the page refreshes when it finishes.
-- **Source page:** the author's abstract and the generated summary side by side. Metadata shows a provenance badge per field (extracted with a confidence score, confirmed, or entered by the researcher), with Confirm, Save and Confirm all. The page also has the analysis with section/page/quote evidence, review status, tags, notes, conversion checks, event history, the canonical Markdown and the original file.
-- **Artifacts:** the literature matrix and the ABNT reference list as web pages, and downloads of `.md`, `.csv` and `catalog.json`.
-
-Security: passwords are hashed with scrypt. Sessions use HttpOnly, SameSite=Lax cookies, and every form carries a CSRF token. Project ids and usernames are validated, so a path can't reach another user's folder. By default the server listens on `127.0.0.1` only.
-
-Options: `--port`, `--host`, `--allow-signup`, `--secure-cookies` (use this behind HTTPS), and the global `--workspace`.
-
-If you expose the server beyond your own machine, put it behind a real WSGI server (for example `gunicorn "acam.web:create_app()"`) and an HTTPS reverse proxy. Flask's built-in server is only meant for local use. Everyone shares the server's `ANTHROPIC_API_KEY`.
-
-## Command line
-
-Account management and per-user scoping:
-
-```bash
-acam user add maria --name "Maria"           # prompts for a password (--admin for administrators)
-acam user list
-acam user passwd maria
-acam user remove maria [--delete-data]
-acam user adopt eduardo                      # move projects created before accounts existed
-acam --user maria projects                   # every command can target a user's workspace
-acam --user maria import ai-se paper.pdf
-```
-
-Without `--user`, commands work directly in the data root, as in single-user mode:
-
-```bash
-# 1. Create a research project (stored under ./projects, or $ACAM_HOME)
-acam init "AI in Software Engineering" --id ai-se \
-  -q "How is AI applied to code review?" --include "peer-reviewed" --exclude "non-English"
-
-# 2. Import sources: PDF, DOCX, TXT, Markdown and HTML
-acam import ai-se examples/sample-article.md paper.pdf thesis.docx --tag llm
-
-# 3. Analyze (auto engine; add --engine heuristic to force offline mode)
-acam analyze ai-se
-
-# 4. Review what was extracted
-acam list ai-se
-acam show ai-se source-001                 # human-readable report
-acam show ai-se source-001 --json          # raw catalog record + analysis
-
-# 5. Researcher-in-the-loop validation
-acam confirm ai-se source-001 title authors doi              # extracted value is correct
-acam set ai-se source-001 publisher "Springer"               # enter/correct a value
-acam set ai-se source-001 authors "Souza, Maria; Miller, John"
-acam set ai-se source-001 type journal_article
-acam status ai-se source-001 validated --note "checked against the PDF"
-acam note ai-se source-001 "Key paper for RQ1"
-
-# 6. Generate academic artifacts (written to projects/ai-se/artifacts/)
-acam matrix ai-se                 # literature-matrix.md   (--csv for a spreadsheet)
-acam references ai-se             # references.md          (ABNT, alphabetical)
-acam report ai-se                 # <source-id>-analysis.md per source
-acam export ai-se                 # catalog.json
-```
-
-`acam formats` lists supported formats, source types, statuses and metadata fields.
-
-## Run the tests
-
-```bash
-pytest
-```
-
-Every run measures coverage and fails below 85% (`python tools/check_coverage.py`
-also holds each file to 85%). The suite covers conversion of every format, validation, metadata extraction,
-reference formatting against the README examples, both analysis engines (the
-Claude call is exercised with a fake client, so no API key is needed), the
-researcher validation workflow, JSON-schema conformance, the CLI end to end and
-every web route (upload, background analysis, edits, artifact downloads, CSRF), and
-multi-tenancy: login, sign-up rules, admin rights, isolation between users (including
-direct-URL access and identical project ids), path-traversal attempts, multiple
-projects and deletion, and the `user` CLI.
+Before adding a format, analysis engine, reference style or artifact, read
+[Extending ACAM Assistant](docs/integration/extending.md). Significant design
+changes get a new [decision record](docs/architecture/decisions/README.md).
 
 ---
 
-# License
+## Project status and roadmap
 
-MIT License.
+**0.1.0 (MVP) delivered:**
+- import and conversion of 5 formats;
+- validation, metadata extraction and ABNT references;
+- per-source analysis (Claude or offline);
+- researcher validation workflow and artifacts;
+- multi-user web interface and CLI;
+- durable background jobs;
+- container deployment.
+
+**Next:** cross-source synthesis (themes, methods, contradictions, gap reports),
+batch analysis, OCR and EPUB, smarter duplicate detection (DOI/title), more
+artifact templates, PRISMA tracking, and project sharing between users. The full
+plan is in [docs/planning/mvp-plan.md](docs/planning/mvp-plan.md). The original
+product vision is in the [product specification](docs/design/specification.md).
+
+**By design**, ACAM Assistant does not decide whether a study is valid, whether
+evidence is sufficient, whether a gap really exists, or whether a source belongs
+in a review. Those decisions stay with the researcher.
 
 ---
 
-# Project Status
+## License
 
-**Name:** ACAM Assistant (ACAM = Academic Management); package and command `acam`
-
-**Status:** MVP implemented (see [Getting Started](#getting-started-mvp) and [docs/](docs/README.md))
-
-**Version:** 0.1.0
-
-**Primary purpose:** Academic literature organization, analysis, and systematic literature review support.
-
-**Canonical analytical format:** Markdown
-
-**Structured research format:** JSON
-
-**Primary users:** Students, researchers, professors, and academic professionals.
-
----
-
-# Next Step
-
-> **Done in 0.1.0.** The technical design below exists: JSON schemas in [`schemas/`](schemas),
-> the pipeline and extraction rules in [docs/design](docs/design/processing-pipeline.md),
-> the prompt in [docs/integration/claude-api.md](docs/integration/claude-api.md), and the
-> architecture in [docs/architecture](docs/architecture/overview.md). The list is kept
-> for reference. Upcoming work is in [docs/planning/mvp-plan.md](docs/planning/mvp-plan.md#6-next-iterations-from-the-readme-roadmap).
-
-The next implementation step should be to transform this specification into a formal technical design containing:
-
-1. `project.schema.json`
-2. `source.schema.json`
-3. `analysis.schema.json`
-4. Markdown document specification
-5. Processing pipeline specification
-6. Prompt templates for each analysis stage
-7. Source-type-specific extraction rules
-8. Academic reference-generation rules
-9. Validation workflow
-10. Initial MVP architecture
-
-These specifications should be defined **before implementing the AI analysis layer**, so that the system's data model and provenance requirements remain independent from any particular AI model.
-
-### Recommended architectural decision
-
-One point I would make explicit before implementation is the distinction between **three representations of the same source**:
-
-```text
-Original Artifact
-      │
-      │ immutable
-      ▼
-Markdown Artifact
-      │
-      │ canonical analytical representation
-      ▼
-Structured Research Data
-      │
-      │ machine-readable
-      ▼
-Academic Artifacts
-```
-
-This is important because it prevents a common problem in AI-assisted research systems: the model's interpretation gradually becoming the "source of truth." The **original document remains authoritative**, Markdown becomes the canonical processing layer, and JSON stores **extracted/derived information with provenance and validation status**.
+[MIT](LICENSE)

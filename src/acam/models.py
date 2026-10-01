@@ -25,7 +25,7 @@ SOURCE_TYPES = (
     "other",
 )
 
-# Source status lifecycle (README "Source Status Lifecycle").
+# Source status lifecycle (specification "Source Status Lifecycle", docs/design/specification.md).
 STATUSES = (
     "imported",
     "converted",

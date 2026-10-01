@@ -1,4 +1,4 @@
-"""Conversion validation (README "Step 4 — Validate Conversion")."""
+"""Conversion validation (specification "Step 4 — Validate Conversion")."""
 
 from __future__ import annotations
 

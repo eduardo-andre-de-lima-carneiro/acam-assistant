@@ -1,4 +1,4 @@
-"""Bibliographic references following the README's ABNT-based structures.
+"""Bibliographic references following the specification's ABNT-based structures.
 
 Missing data is never invented; ABNT placeholders are used instead
 (``[s.l.]`` unknown place, ``[s.n.]`` unknown publisher, ``[s.d.]`` unknown

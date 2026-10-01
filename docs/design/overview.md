@@ -3,7 +3,9 @@
 ## Purpose
 
 **ACAM Assistant** (ACAM = *Academic Management*) is a research assistant for
-managing academic work. Version 0.1.0 focuses on literature reviews.
+managing academic work. Version 0.1.0 focuses on literature reviews. The full
+original vision is in the [product specification](specification.md); this
+document summarizes it and states what 0.1.0 implements.
 
 ACAM Assistant reduces the repetitive work of a literature review: collecting sources,
 converting them to text, cataloging bibliographic data, extracting objectives,
@@ -38,7 +40,7 @@ In scope:
   full JSON export.
 
 Not in scope yet: cross-source synthesis, OCR, EPUB, project sharing between
-users, PRISMA tracking. See [the MVP plan](../planning/mvp-plan.md#6-next-iterations-from-the-readme-roadmap).
+users, PRISMA tracking. See [the MVP plan](../planning/mvp-plan.md#6-next-iterations-from-the-specification-roadmap).
 
 ## Design principles
 

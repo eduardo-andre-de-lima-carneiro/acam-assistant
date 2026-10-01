@@ -31,7 +31,7 @@ There is no database, cache, queue or JavaScript toolchain. See
 
 ```text
 .
-├── README.md              product specification and quick start
+├── README.md              project front page: quick start, features, usage
 ├── pyproject.toml         package metadata, dependencies, pytest config
 ├── src/acam/         application package (see Architecture overview)
 ├── schemas/               JSON Schemas for project, source and analysis records
@@ -65,7 +65,7 @@ the API; they use a fake client.
 | --------- | ------ |
 | `test_conversion.py` | every format → structured Markdown; page markers; DOCX tables; HTML boilerplate removal; unsupported/empty/scanned/Latin-1 inputs |
 | `test_extraction.py` | metadata extraction accuracy on the sample; candidates never validated; no invented values on uninformative text |
-| `test_references.py` | author formatting (particles, suffixes, institutions); the README's book/article/website examples exactly; placeholders; et al.; dates |
+| `test_references.py` | author formatting (particles, suffixes, institutions); the specification's book/article/website examples exactly; placeholders; et al.; dates |
 | `test_pipeline.py` | import of every format with schema validation; duplicates; failed conversion; heuristic analysis evidence; LLM request shape, provenance, merge rules and refusal (fake client); researcher workflow |
 | `test_cli.py` | end-to-end CLI from `init` to `export`; error exit codes |
 | `test_web.py` | every web route with a logged-in, CSRF-aware test browser; background jobs run inline |

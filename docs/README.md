@@ -2,13 +2,15 @@
 
 Technical documentation for **ACAM Assistant** (ACAM = *Academic Management*), a
 research assistant for managing academic work, currently focused on literature reviews.
-The repository's top-level [README](../README.md) is the product specification and
-quick start. This folder explains how the system is designed, built, secured,
-deployed and integrated.
+The repository's top-level [README](../README.md) is the project front page and quick
+start. This folder explains how the system is designed, built, secured, deployed and
+integrated. The original product vision is in the
+[product specification](design/specification.md).
 
 | Area | Document | Read it when you want to… |
 | ---- | -------- | ------------------------- |
 | **Design** | [Overview & principles](design/overview.md) | understand what the system does, for whom, and the rules it never breaks |
+| | [Product specification](design/specification.md) | read the full original vision: goals, features, workflow, reference standards, roadmap |
 | | [Data model](design/data-model.md) | read or write `project.json`, `sources.json`, analysis files, provenance fields |
 | | [Processing pipeline](design/processing-pipeline.md) | know exactly what happens from import to analysis |
 | | [User experience](design/user-experience.md) | see the web and CLI workflows |

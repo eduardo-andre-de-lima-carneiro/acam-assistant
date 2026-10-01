@@ -190,7 +190,7 @@ def source_report(project: Project, source_id: str) -> str:
 
 
 def export_catalog(project: Project) -> str:
-    """Single JSON document in the shape of README's "Structured JSON Model"."""
+    """Single JSON document in the shape of the specification's "Structured JSON Model"."""
     sources = []
     for s in project.sources():
         sources.append({**s, "analysis_result": project.read_analysis(s["id"])})

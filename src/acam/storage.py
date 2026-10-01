@@ -1,6 +1,6 @@
 """File-based project repository.
 
-Layout of one project (README "Project-Based Organization")::
+Layout of one project (specification "Project-Based Organization")::
 
     <workspace>/<project-id>/
         project.json      research project definition

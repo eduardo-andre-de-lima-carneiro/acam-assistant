@@ -5,14 +5,14 @@
 > [architecture](../architecture/overview.md), [security](../security/security.md),
 > [deployment](../deployment/server.md) and [integration](../integration/claude-api.md).
 
-This document turns the README specification into the plan that was used to build
+This document turns the [product specification](../design/specification.md) into the plan that was used to build
 version 0.1.0, and records what is in scope, how it is built, and what comes next.
 
 ## 1. Goal of the MVP
 
-Deliver the README's **Initial MVP Scope** as a small, reliable, testable tool:
+Deliver the specification's **Initial MVP Scope** as a small, reliable, testable tool:
 
-| MVP requirement (README)       | Delivered as |
+| MVP requirement (specification) | Delivered as |
 | ------------------------------ | ------------ |
 | Input: PDF, DOCX, Markdown, TXT | All four, plus HTML |
 | Import                          | `acam import`: copies the original into `original/`, computes SHA-256, assigns `source-NNN` |
@@ -22,7 +22,7 @@ Deliver the README's **Initial MVP Scope** as a small, reliable, testable tool:
 | Generate summary                | Analysis `summary`, stored apart from the author's abstract (`abstract.generated_summary` and `abstract.original_abstract`) |
 | Analyze source                  | `analysis/`: `llm` (Claude) or `heuristic` engine, same output schema |
 | Store JSON                      | `project.json`, `sources.json`, `analysis/<id>.json`, validated by the files in `schemas/` |
-| Output: bibliographic reference | `references/abnt.py`: book, article and website structures from the README, with ABNT placeholders |
+| Output: bibliographic reference | `references/abnt.py`: book, article and website structures from the specification, with ABNT placeholders |
 
 Also included because they were cheap and needed for real use: the researcher
 validation workflow, the literature matrix, the reference list, per-source reports,
@@ -43,7 +43,7 @@ web/  ──┴► pipeline.py ──► conversion/  (pdf, docx, html, txt, md 
 artifacts/  ◄── reads only the JSON catalog + analyses (never the originals)
 ```
 
-Each stage is a separate module with its own tests, as the README asks
+Each stage is a separate module with its own tests, as the specification asks
 ("each processing stage should be independently testable"). Analysis code only
 ever receives Markdown.
 
@@ -104,7 +104,7 @@ If validation fails, the source stays `converted` and has no metadata. Analysis 
 - Fixtures are built at test time from `examples/sample-article.md` as PDF (a small
   built-in PDF writer), DOCX (python-docx), TXT and HTML, so there are no binary
   files in the repository.
-- Reference tests reproduce the three README examples exactly.
+- Reference tests reproduce the specification's three examples exactly.
 - The Claude call is exercised with a fake client. The tests check the request
   shape (model, JSON-schema output, fallbacks, project context), the recorded
   provenance, the metadata merge rules and refusal handling.
@@ -120,7 +120,7 @@ If validation fails, the source stays `converted` and has no metadata. Analysis 
   headings. Tables and multi-column layouts come out as plain text.
 - **Metadata heuristics** are best-effort, especially author detection. That is why
   confidence scores and the confirm/set workflow exist.
-- **References** cover the README's book, article and website structures. Other
+- **References** cover the specification's book, article and website structures. Other
   types fall back to a generic form.
 - **Duplicate detection** only catches identical files (same hash).
 - The **LLM engine was verified with a fake client only**. Run it once against the
@@ -133,7 +133,7 @@ If validation fails, the source stays `converted` and has no metadata. Analysis 
 - Concurrency is limited to one host. File locks and the SQLite queue need a
   local filesystem ([ADR-010](../architecture/decisions/ADR-010-multi-process-concurrency.md)).
 
-## 6. Next iterations (from the README roadmap)
+## 6. Next iterations (from the specification roadmap)
 
 1. **Phase 5: synthesis.** A cross-source LLM pass over the validated analyses
    (themes, methodology comparison, consistent/contradictory findings, gap report),
