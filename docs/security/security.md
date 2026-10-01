@@ -101,9 +101,25 @@ left the server.
 
 ### Secrets
 
-- `ANTHROPIC_API_KEY` is read from the environment and never written to disk or logs.
-- `.secret_key` and `users.json` are in `.gitignore`. Never commit a data root
+- **API key:** `ANTHROPIC_API_KEY` is read from the environment and never written
+  to disk, logs or pages.
+  - Prefer **`ANTHROPIC_API_KEY_FILE`**: a path to a file (Docker or Kubernetes
+    secret) holding the key, so it doesn't show in `docker inspect` or
+    `docker compose config`. The same works for `ANTHROPIC_AUTH_TOKEN_FILE`.
+  - An empty or unreadable file stops start-up with a clear error.
+- **First administrator:** the password can come from `ACAM_ADMIN_PASSWORD_FILE`
+  in the same way.
+- **Session key (`.secret_key`):** created atomically with mode 600, so it is
+  never readable by other users, even briefly. It is created exactly once:
+  several processes starting at the same time all use the same key.
+- **`users.json`:** written through a temporary file created with mode 600.
+  Password hashes are never readable by other users.
+- **Git:** `.secret_key`, `users.json`, `.env`, `secrets/`, and the runtime files
+  (`jobs.db*`, lock files) are git- and docker-ignored. Never commit a data root
   that contains them.
+- **Debug mode:** `acam web --debug` refuses to start unless the server listens
+  only on this machine (`127.0.0.1`, `::1`, `localhost`), because the Flask
+  debugger can run arbitrary code.
 - Every user of a server shares its API key: usage is billed to one account and
   there are no per-user quotas.
 
@@ -138,6 +154,26 @@ and from the Docker build context. Details: [Container deployment](../deployment
 | One shared Anthropic key | cost abuse by a user | monitor usage in the Anthropic console; set spend limits there |
 | Flask's built-in server | not hardened | use gunicorn behind a reverse proxy, or the container image, for anything beyond localhost |
 | No global audit log | limited forensics | proxy access logs; future: structured audit events |
+
+## Secret-exposure audit (2026-10-01)
+
+| Check | Result |
+| ----- | ------ |
+| Pattern scan of the working tree (API keys, private keys, tokens, password hashes) | no secrets; only placeholders (`sk-ant-...`) and a truncated example hash in the data-model doc |
+| [gitleaks](https://github.com/gitleaks/gitleaks) over all commits and the working tree | **no leaks found** |
+| Every path ever committed | no `.env`, keys, `users.json`, `.secret_key` or `jobs.db` |
+| Ignore rules (`git check-ignore`) | `.env*`, `secrets/`, `.secret_key`, `users.json`, `jobs.db*`, lock files, coverage files and `*.egg-info/` are ignored |
+| Docker image (environment, files, layer history) | no secrets; `/data` empty; only public CA certificates and Python's public GPG key fingerprint |
+| Running stack with key and admin password as Docker secrets | not present in `docker inspect`, `docker compose config`, logs or pages |
+| Tests (`tests/test_secrets.py`) | session key private and identical across 8 concurrent processes; `users.json` mode 600 under a permissive umask; key files; debug guard; passwords never appear in responses or logs |
+
+Not secrets, but reported in the same audit: the public repository contained a
+committed research project (`projects/ai-se`), including a publisher's PDF, the
+`src/acam_assistant.egg-info/` build folder, and 44 compiled `__pycache__/*.pyc`
+files that embed absolute local paths. `.gitignore` now covers all of them, but
+files already committed have to be removed from the index explicitly. Research data and third-party
+PDFs should not be committed; keep the data root outside the repository or
+git-ignored.
 
 ## Reporting a vulnerability
 

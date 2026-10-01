@@ -50,7 +50,7 @@ git clone <repo> && cd acam-s2
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-pytest                              # 133 tests + coverage (~50 s), no network or API key needed
+pytest                              # 150 tests + coverage (~90 s), no network or API key needed
 python tools/check_coverage.py      # every file must be ≥ 85% covered
 docker build --target test .        # both, inside the container image (Python 3.12)
 acam --workspace /tmp/lr web        # try the web UI with throwaway data
@@ -74,6 +74,7 @@ the API; they use a fake client.
 | `test_worker.py` | success/failure recording, injected LLM client, heartbeats during long jobs, heartbeat errors, crashed-job recovery, background threads start/stop, resilience to database errors |
 | `test_concurrency.py` | **real OS processes**: 8 parallel CLI imports (unique ids, complete records), 6 parallel duplicate imports (one kept), 20 parallel notes + 10 tags on one source (nothing lost), 3 worker processes draining 9 jobs (each exactly once), crash recovery + SIGTERM shutdown of a worker process, gunicorn with 3 processes under 24 parallel HTTP edits + an analysis |
 | `test_edge_cases.py` | LLM error paths (oversize, truncation, missing/invalid JSON, default client), engine selection, container bootstrap errors, encrypted and corrupt PDFs |
+| `test_secrets.py` | session key mode 600 and identical across 8 concurrent processes; `users.json` mode 600 under a permissive umask; API key files; debug-mode guard; passwords never in responses or logs |
 | `test_container.py` | configuration from the environment, `/healthz`, admin bootstrap from env or secret file, WSGI module |
 | `test_tenancy.py` | password hashing and file permissions; username/project-id validation and path traversal; login/sign-up rules; admin rights; isolation between users; multiple projects and deletion; `user` CLI |
 
@@ -83,7 +84,7 @@ the API; they use a fake client.
   and fails if the total is below **85%**.
 - `tools/check_coverage.py` also holds **every file** to 85%. It runs in the
   Docker `test` stage, so an image can't be built from code that misses the bar.
-- Current state: 93% total; every file ≥ 86%; the concurrency modules (`locks`,
+- Current state: 93% total; every file ≥ 85%; the concurrency modules (`locks`,
   `jobs`, `worker`) at 100%.
 - Lines excluded from measurement: the Windows fallback without `fcntl`, and the
   blocking `serve_forever` loop. The latter is exercised by the process tests,

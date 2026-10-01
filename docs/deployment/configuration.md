@@ -10,6 +10,8 @@ app-factory arguments. It has no configuration file.
 | `ACAM_HOME` | `./projects` (resolved against the working directory) | CLI, web | data root |
 | `ACAM_MODEL` | `claude-opus-5-5` | LLM engine | Claude model id |
 | `ANTHROPIC_API_KEY` | — | LLM engine | API key. Setting it makes `auto` choose the LLM engine |
+| `ANTHROPIC_API_KEY_FILE` | — | CLI, web, worker | file holding the API key (Docker/K8s secret); used when `ANTHROPIC_API_KEY` is not set. Recommended for servers |
+| `ANTHROPIC_AUTH_TOKEN_FILE` | — | CLI, web, worker | same for `ANTHROPIC_AUTH_TOKEN` |
 | `ANTHROPIC_AUTH_TOKEN` | — | LLM engine | alternative credential (OAuth token); also makes `auto` choose LLM |
 | `ANTHROPIC_PROFILE` | — | LLM engine | named Anthropic CLI profile; also makes `auto` choose LLM |
 | `ACAM_ALLOW_SIGNUP` | `false` | web | `true`/`1`/`yes`/`on` enables self-service sign-up (flag `--allow-signup` or factory argument wins) |
@@ -60,7 +62,7 @@ Read by the image's entrypoint and gunicorn config (`docker/`). See
 | `--port` | `8000` | TCP port |
 | `--allow-signup` | off | anyone can create an account (the first account can always be created) |
 | `--secure-cookies` | off | session cookie sent only over HTTPS |
-| `--debug` | off | Flask debug mode. **Never** use in production |
+| `--debug` | off | Flask debug mode. Refused unless `--host` is a loopback address; never use in production |
 
 `acam web` uses Flask's development server, which is fine on your own
 machine. For servers, use the app factory with gunicorn:

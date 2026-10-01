@@ -43,6 +43,7 @@ sudo chmod 700 /srv/acam/data
 ACAM_HOME=/srv/acam/data
 ACAM_EMBEDDED_WORKER=false            # analyses run in acam-worker.service
 ANTHROPIC_API_KEY=sk-ant-...          # optional: enables the LLM engine
+# or keep it in a root-only file:  ANTHROPIC_API_KEY_FILE=/etc/acam/anthropic_api_key
 # ACAM_MODEL=claude-opus-5-5     # optional override
 ```
 

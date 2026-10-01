@@ -157,3 +157,21 @@ secrets/
 .coverage.*
 coverage.xml
 htmlcov/
+
+# ACAM Assistant runtime files (if a data root lives inside the repo)
+jobs.db
+jobs.db-wal
+jobs.db-shm
+users.json.lock
+.lock
+.healthz
+
+# Build metadata
+*.egg-info/
+
+# Python bytecode (embeds absolute local paths)
+__pycache__/
+*.py[cod]
+
+# Local research data
+projects/

@@ -23,6 +23,16 @@ x-acam: &acam
     target: runtime
   pull_policy: build
   restart: unless-stopped
+  # Optional secrets (keep them out of `docker inspect` and `docker compose config`):
+  # 1. mkdir -p secrets && chmod 700 secrets
+  #    printf '%s' 'sk-ant-...' > secrets/anthropic_api_key.txt
+  #    printf '%s' 'a-strong-password' > secrets/admin_password.txt
+  # 2. uncomment the `secrets` lists here and at the bottom of the file
+  # 3. in .env: ANTHROPIC_API_KEY_FILE=/run/secrets/anthropic_api_key
+  #             ACAM_ADMIN_USER=admin and ACAM_ADMIN_PASSWORD_FILE=/run/secrets/admin_password
+  # secrets:
+  #   - anthropic_api_key
+  #   - admin_password
   env_file:
     - path: .env
       required: false
@@ -44,12 +54,6 @@ services:
       ACAM_EMBEDDED_WORKER: "false"   # analyses run in the worker service
     ports:
       - "127.0.0.1:${ACAM_PORT:-8000}:8000"
-    # Optional: provide the first admin's password as a secret instead of an env var.
-    # 1. echo 'a-strong-password' > secrets/admin_password.txt
-    # 2. uncomment the two `secrets` blocks and set ACAM_ADMIN_USER and
-    #    ACAM_ADMIN_PASSWORD_FILE=/run/secrets/admin_password in .env
-    # secrets:
-    #   - admin_password
 
   worker:
     <<: *acam
@@ -86,6 +90,8 @@ services:
       - caddy-config:/config
 
 # secrets:
+#   anthropic_api_key:
+#     file: ./secrets/anthropic_api_key.txt
 #   admin_password:
 #     file: ./secrets/admin_password.txt
 

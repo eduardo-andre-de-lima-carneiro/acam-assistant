@@ -11,6 +11,7 @@ from pathlib import Path
 
 from . import __version__, accounts, artifacts, conversion, models, pipeline, storage
 from .analysis import resolve_engine
+from .secretfiles import SecretFileError, load_secret_files
 
 
 def _project(args) -> storage.Project:
@@ -416,6 +417,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
+    try:
+        load_secret_files()
+    except SecretFileError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(2)
     args.root = (args.workspace or storage.default_workspace()).resolve()
     args.workspace = args.root
     try:

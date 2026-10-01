@@ -14,6 +14,7 @@ moved into a user's space with :func:`adopt_legacy_projects`.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -51,10 +52,18 @@ def _load(root: Path) -> list[dict]:
 def _save(root: Path, users: list[dict]) -> None:
     root.mkdir(parents=True, exist_ok=True)
     f = _users_file(root)
-    tmp = f.with_suffix(".tmp")
-    tmp.write_text(json.dumps({"users": users}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    tmp.chmod(0o600)
-    tmp.replace(f)
+    tmp = f.with_name(f".{f.name}.{os.getpid()}.tmp")
+    # Created with mode 600 from the start: password hashes are never world-readable.
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(json.dumps({"users": users}, ensure_ascii=False, indent=2) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.chmod(tmp, 0o600)  # in case the file pre-existed with other permissions
+        tmp.replace(f)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def _public(user: dict) -> dict:

@@ -195,7 +195,7 @@ The most common ones:
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
 | `ACAM_HOME` | `./projects` | data root: accounts, workspaces, job queue |
-| `ANTHROPIC_API_KEY` | — | enables Claude analysis |
+| `ANTHROPIC_API_KEY` | — | enables Claude analysis (on servers prefer `ANTHROPIC_API_KEY_FILE`, a secret file) |
 | `ACAM_MODEL` | `claude-opus-5-5` | Claude model |
 | `ACAM_ALLOW_SIGNUP` | `false` | let anyone create an account |
 | `ACAM_SECURE_COOKIES` | `false` | set to `true` when served over HTTPS |

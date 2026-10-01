@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import functools
 import hmac
+import ipaddress
 import os
 import re
 import secrets
 import tempfile
+import time
 from collections import Counter
 from pathlib import Path
 from urllib.parse import urlparse
@@ -25,6 +27,7 @@ from werkzeug.utils import secure_filename
 from .. import __version__, accounts, artifacts, conversion, models, pipeline, storage
 from ..analysis import resolve_engine
 from ..locks import LockTimeout
+from ..secretfiles import load_secret_files
 from ..worker import Worker, queue_for
 
 
@@ -33,12 +36,28 @@ def _lines(text: str | None) -> list[str]:
 
 
 def _secret_key(root: Path) -> bytes:
-    """Persist the session key so logins survive server restarts."""
+    """Persist the session key so logins survive restarts.
+
+    Created atomically with mode 600 (never readable by others, not even
+    briefly) and exactly once: when several processes start together, all of
+    them end up with the same key.
+    """
     f = root / ".secret_key"
-    if not f.exists():
-        f.write_bytes(secrets.token_bytes(32))
-        f.chmod(0o600)
-    return f.read_bytes()
+    try:
+        fd = os.open(f, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        pass
+    else:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(secrets.token_bytes(32))
+            fh.flush()
+            os.fsync(fh.fileno())
+    for _ in range(50):  # another process may be finishing the write
+        key = f.read_bytes()
+        if len(key) >= 32:
+            return key
+        time.sleep(0.02)
+    raise RuntimeError(f"session key file {f} is incomplete; delete it and restart")
 
 
 def env_flag(name: str, default: bool = False) -> bool:
@@ -59,6 +78,7 @@ def create_app(workspace: Path | None = None, inline_jobs: bool = False,
     this process also runs an embedded worker; with ``embedded_worker=False`` a
     separate ``acam worker`` process must run. ``inline_jobs`` processes
     queued jobs synchronously within the request (tests)."""
+    load_secret_files()
     app = Flask(__name__)
     if allow_signup is None:
         allow_signup = env_flag("ACAM_ALLOW_SIGNUP")
@@ -509,9 +529,21 @@ def create_app(workspace: Path | None = None, inline_jobs: bool = False,
     return app
 
 
+def _is_loopback(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 def run(host: str = "127.0.0.1", port: int = 8000, workspace: Path | None = None,
         debug: bool = False, allow_signup: bool | None = None,
         secure_cookies: bool | None = None) -> None:
+    if debug and not _is_loopback(host):
+        # The Werkzeug debugger executes arbitrary code; never expose it.
+        raise ValueError(f"--debug is only allowed when listening on localhost, not on {host}")
     app = create_app(workspace, allow_signup=allow_signup, secure_cookies=secure_cookies)
     root = app.config["ROOT"]
     print(f"ACAM Assistant web UI on http://{host}:{port}  (data root: {root})")

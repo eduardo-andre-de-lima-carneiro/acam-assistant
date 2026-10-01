@@ -58,7 +58,7 @@ All settings are environment variables, usually in `.env`. The full list is in
 
 | Variable | Typical value |
 | -------- | ------------- |
-| `ANTHROPIC_API_KEY` | your key (empty = offline heuristic engine) |
+| `ANTHROPIC_API_KEY_FILE` (or `ANTHROPIC_API_KEY`) | your key, preferably as a secret file (empty = offline heuristic engine) |
 | `ACAM_ADMIN_USER` / `ACAM_ADMIN_PASSWORD_FILE` | first administrator, created once |
 | `ACAM_SECURE_COOKIES` | `true` whenever users connect over HTTPS |
 | `ACAM_ALLOW_SIGNUP` | `false` unless open registration is wanted |
@@ -66,25 +66,32 @@ All settings are environment variables, usually in `.env`. The full list is in
 | `ACAM_WORKERS` / `ACAM_THREADS` | web processes (default 2) and threads per process (default 4) |
 | `ACAM_WORKER_THREADS` | concurrent analyses per worker container (default 2) |
 
-### Admin password as a secret
+### Secrets: API key and admin password
 
-Prefer a file secret to a plain variable:
+Prefer file secrets to plain variables. Values in `.env` are visible through
+`docker inspect` and `docker compose config`; secret files are not.
 
 ```bash
 mkdir -p secrets && chmod 700 secrets
+printf '%s' 'sk-ant-...'             > secrets/anthropic_api_key.txt
 printf '%s' 'a-long-random-password' > secrets/admin_password.txt
 ```
 
-In `docker-compose.yml`, uncomment the two `secrets:` blocks. In `.env`, set:
+In `docker-compose.yml`, uncomment the `secrets:` lists (in the shared `x-acam`
+block and at the bottom). In `.env`:
 
 ```bash
+ANTHROPIC_API_KEY_FILE=/run/secrets/anthropic_api_key
+ANTHROPIC_API_KEY=
 ACAM_ADMIN_USER=admin
 ACAM_ADMIN_PASSWORD_FILE=/run/secrets/admin_password
 ACAM_ADMIN_PASSWORD=
 ```
 
-`secrets/` is git- and docker-ignored. After the first start the account exists,
-and the secret is no longer read (the bootstrap skips existing users).
+`secrets/` is git- and docker-ignored. This setup was verified: neither value
+appears in `docker inspect`, `docker compose config`, the logs or any page, and
+the app detects the key (`engine: llm`). After the first start the admin account
+exists, and the bootstrap skips it.
 
 ## HTTPS with the `tls` profile
 
