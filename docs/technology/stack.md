@@ -46,7 +46,7 @@ There is no database, cache, queue or JavaScript toolchain. See
 ## Development setup
 
 ```bash
-git clone <repo> && cd acam-s2
+git clone git@github.com:eduardo-andre-de-lima-carneiro/acam-assistant.git && cd acam-assistant
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"

@@ -30,7 +30,7 @@ runs. That way web restarts never interrupt analyses.
 ```bash
 sudo useradd --system --create-home --home-dir /srv/acam acam
 sudo -u acam python3 -m venv /srv/acam/venv
-sudo -u acam /srv/acam/venv/bin/pip install "/path/to/acam-s2[server]"                  # includes gunicorn
+sudo -u acam /srv/acam/venv/bin/pip install "/path/to/acam-assistant[server]"          # includes gunicorn
 sudo -u acam mkdir -p /srv/acam/data
 sudo chmod 700 /srv/acam/data
 ```
@@ -231,7 +231,7 @@ contain password hashes and research data.
 ### Upgrading
 
 ```bash
-sudo -u acam /srv/acam/venv/bin/pip install --upgrade /path/to/new/acam-s2
+sudo -u acam /srv/acam/venv/bin/pip install --upgrade /path/to/new/acam-assistant
 sudo systemctl restart acam
 ```
 

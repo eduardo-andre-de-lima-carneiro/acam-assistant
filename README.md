@@ -34,7 +34,8 @@ The researcher stays in control of every interpretation and decision.
 ### Option A: on your computer
 
 ```bash
-git clone <repository-url> acam-assistant && cd acam-assistant
+git clone https://github.com/eduardo-andre-de-lima-carneiro/acam-assistant.git
+cd acam-assistant
 python3 -m venv .venv
 source .venv/bin/activate              # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"

@@ -11,7 +11,8 @@ For one researcher on their own computer (macOS, Linux or Windows with Python).
 ## Install
 
 ```bash
-cd acam-s2
+git clone https://github.com/eduardo-andre-de-lima-carneiro/acam-assistant.git
+cd acam-assistant
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e .                   # add ".[dev]" to also install the test tools
